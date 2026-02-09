@@ -1,1 +1,214 @@
 
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koyra-Paikgacha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        notice: '#F0F9FF',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background-color: #FFFFFF;
+            color: #1A1A1A;
+        }
+        .scrolling-text {
+            white-space: nowrap;
+            animation: scroll 25s linear infinite;
+        }
+        @keyframes scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        
+        /* Premium Header Logic */
+        .header-liquid {
+            background: linear-gradient(-45deg, #001F3F, #003366, #010B13, #002D54);
+            background-size: 400% 400%;
+            animation: liquidGradient 12s ease infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes liquidGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header-curves::before, .header-curves::after {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle at center, rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+            animation: rotateCurves 25s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header-curves::after {
+            background: radial-gradient(circle at center, rgba(0, 75, 150, 0.15) 0%, transparent 60%);
+            animation: rotateCurves 18s linear infinite reverse;
+        }
+
+        @keyframes rotateCurves {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .glass-header {
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+        }
+
+        /* Metallic Premium Blue Gradient for Navigation */
+        .metallic-blue {
+            background: linear-gradient(135deg, #0062cc 0%, #007BFF 50%, #0056b3 100%);
+            box-shadow: 0 10px 25px rgba(0, 86, 179, 0.45), 
+                        inset 0 1px 2px rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .metallic-blue::after {
+            content: '';
+            position: absolute;
+            top: 5%;
+            left: 10%;
+            width: 80%;
+            height: 40%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, transparent 100%);
+            border-radius: 50% 50% 10% 10%;
+            pointer-events: none;
+        }
+
+        .metallic-blue:active {
+            transform: scale(0.9) translateY(2px);
+            box-shadow: 0 5px 15px rgba(0, 86, 179, 0.3);
+        }
+
+        .glow-active {
+            box-shadow: 0 0 30px rgba(0, 123, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Premium 3D Menu Card */
+        .premium-card {
+            background: #FFFFFF;
+            border: 1px solid #E3F2FD;
+            box-shadow: 0 10px 15px -3px rgba(0, 86, 179, 0.08), 0 4px 6px -2px rgba(0, 86, 179, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .premium-card:active {
+            transform: scale(1.08);
+            box-shadow: 0 20px 25px -5px rgba(0, 86, 179, 0.1), 0 10px 10px -5px rgba(0, 86, 179, 0.04);
+        }
+
+        /* High-End Floating Animation */
+        .icon-floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Sub-title Animation: Slide and Fade */
+        .animate-sub-title {
+            animation: slideFade 4s ease-in-out infinite;
+        }
+        @keyframes slideFade {
+            0%, 100% { opacity: 0.6; transform: translateY(2px); }
+            50% { opacity: 1; transform: translateY(0px); }
+        }
+
+        /* Developer Credit Animation */
+        .shimmer-text {
+            background: linear-gradient(90deg, #0056b3, #00aaff, #0056b3);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: shimmer 3s linear infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+        .float-small {
+            animation: floatSmall 4s ease-in-out infinite;
+        }
+        @keyframes floatSmall {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        /* Dynamic Moving Gradient for Buttons */
+        .premium-btn-animate {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient-shift 4s ease infinite;
+        }
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F8FAFC;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0056b3;
+            border-radius: 10px;
+        }
+        
+        /* Font styles for specific inputs */
+        .font-inter {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-white text-[#1A1A1A] transition-colors duration-300">
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
