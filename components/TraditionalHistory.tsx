@@ -37,7 +37,7 @@ import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebase
 import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBg-atwF990YQ8PvOCwKPDxu8IZlQgOZr4',
+  apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
   authDomain: 'koyra-paikgacha.firebaseapp.com',
   databaseURL: 'https://koyra-paikgacha-default-rtdb.firebaseio.com',
   projectId: 'koyra-paikgacha',
@@ -144,7 +144,7 @@ const TraditionalHistory: React.FC<{ busId: string; onBack: () => void }> = ({ b
             title: 'কয়রা উপজেলার দর্শনীয় স্থান',
             spots: [
               { title: 'বিশ্ব ঐতিহ্যবাহী সুন্দরবন', highlight: 'ইউনেস্কো ঘোষিত বিশ্ব ঐতিহ্য', desc: 'কয়রা উপজেলার দক্ষিণাঞ্চল জুড়ে বিশ্বের বৃহত্তম ম্যানগ্রোভ বন সুন্দরবন বিস্তৃত। সুন্দরবনের প্রাকৃতিক সৌন্দর্য ও রয়্যাল বেঙ্গল টাইগারের অন্যতম আবাসভূমি.', icon: 'Trees' },
-              { title: 'ঐতিহাসিক মসজিদকুঁড় ৯ গুম্বুজ মসজিদ', highlight: '১৫শ শতাব্দীর প্রত্নতাত্ত্বিক নিদর্শন', desc: 'খান জাহান আলী (র.)-এর আমল বা তাঁর স্থাপত্যশৈলী অনুসরণ করে নির্মিত এই মসজিদটি কয়রা আমাদী ইউনিয়নে অবস্থিত।', icon: 'LandmarkIcon' },
+              { title: 'ঐতিহাসিক মসজিদকুঁড় ৯ গুম্বুজ মসজিদ', highlight: '১৫শ শতাব্দীর প্রত্নতাত্ত্বিক নিদর্শন', desc: 'খান জাহান আলী (র.)-এর আমল বা তাঁর স্থাপত্যশৈলী অনুসরণ করে নির্মিত এই মসজিদটি কয়রা আমাদী ইউনিয়নে অবস্থিত।', icon: 'LandmarkIcon' },
               { title: 'কাছারী বাড়ি বটবৃক্ষ', highlight: 'শতবর্ষী প্রাকৃতিক ঐশ্বর্য', desc: 'উপজেলা সদরের নিকটবর্তী ঐতিহাসিক কাছারী বাড়ির বিশাল বটবৃক্ষটি যেন কালের সাক্ষী।', icon: 'Shrub' },
               { title: 'দুবলার চর', highlight: 'জেলে পল্লী ও পর্যটন দ্বীপ', desc: 'সুন্দরবনের অভ্যন্তরে কপোতাক্ষ ও শিবসা নদীর মোহনায় অবস্থিত এই দ্বীপটি। শুঁটকি মাছ উৎপাদন এবং রাস মেলার জন্য পরিচিত।', icon: 'AnchorIcon' }
             ]

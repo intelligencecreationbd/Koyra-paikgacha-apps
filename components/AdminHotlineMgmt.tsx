@@ -22,7 +22,7 @@ import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebase
 import { getDatabase, ref, onValue, remove, set, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBg-atwF990YQ8PvOCwKPDxu8IZlQgOZr4',
+  apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
   authDomain: 'koyra-paikgacha.firebaseapp.com',
   databaseURL: 'https://koyra-paikgacha-default-rtdb.firebaseio.com',
   projectId: 'koyra-paikgacha',

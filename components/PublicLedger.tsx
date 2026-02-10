@@ -28,7 +28,7 @@ import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebase
 import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBg-atwF990YQ8PvOCwKPDxu8IZlQgOZr4',
+  apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
   authDomain: 'koyra-paikgacha.firebaseapp.com',
   databaseURL: 'https://koyra-paikgacha-default-rtdb.firebaseio.com',
   projectId: 'koyra-paikgacha',
@@ -128,22 +128,18 @@ const PublicLedger: React.FC<PublicLedgerProps> = ({ user, onBack }) => {
         newBalance -= amount;
         history.push({ date: new Date().toISOString(), amount, type: 'debo', note: 'হাওলাত নিয়েছি' });
     } else if (ledgerFormData.type === 'repay') {
-        // Advanced Split Logic
         if (currentBalance > 0 && amount > currentBalance) {
-            // Case: Debtor pays more than they owe
             const extra = amount - currentBalance;
             history.push({ date: new Date().toISOString(), amount: currentBalance, type: 'repay', note: 'বকেয়া পরিশোধ' });
             history.push({ date: new Date().toISOString(), amount: extra, type: 'debo', note: 'অতিরিক্ত (হাওলাত নিয়েছি)' });
             newBalance = -extra;
         } else if (currentBalance < 0 && amount > Math.abs(currentBalance)) {
-            // Case: Creditor is paid more than I owe them
             const absBal = Math.abs(currentBalance);
             const extra = amount - absBal;
             history.push({ date: new Date().toISOString(), amount: absBal, type: 'repay', note: 'বকেয়া পরিশোধ' });
             history.push({ date: new Date().toISOString(), amount: extra, type: 'pabo', note: 'অতিরিক্ত (হাওলাত দিয়েছি)' });
             newBalance = extra;
         } else {
-            // Normal repayment
             history.push({ date: new Date().toISOString(), amount: amount, type: 'repay', note: 'পরিশোধ করা হয়েছে' });
             newBalance = currentBalance > 0 ? currentBalance - amount : currentBalance + amount;
         }
@@ -196,7 +192,6 @@ const PublicLedger: React.FC<PublicLedgerProps> = ({ user, onBack }) => {
 
   return (
     <div className="animate-in fade-in duration-500">
-      {/* User Info Bar */}
       <div className="flex items-center gap-3 p-3 bg-slate-50/80 border border-slate-100 rounded-[24px] mb-4 shadow-[inset_0_1px_2px_rgba(0,0,0,0.02)]">
         <div className="w-11 h-11 rounded-full border-2 border-white shadow-md overflow-hidden bg-slate-100 shrink-0">
           {(user as any).photoURL ? (
@@ -213,7 +208,6 @@ const PublicLedger: React.FC<PublicLedgerProps> = ({ user, onBack }) => {
         </div>
       </div>
 
-      {/* Header */}
       <header className="bg-white py-2 flex items-center gap-4 mb-5">
         <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-2xl text-slate-600 active:scale-90 transition-all shadow-sm">
           <ChevronLeft size={22} />
@@ -231,7 +225,6 @@ const PublicLedger: React.FC<PublicLedgerProps> = ({ user, onBack }) => {
       </header>
 
       <div className="space-y-5">
-        {/* Summary Section - Acts as Filter */}
         <div className="grid grid-cols-2 gap-4">
           <button 
             onClick={() => setActiveFilter(activeFilter === 'pabo' ? null : 'pabo')}
@@ -249,7 +242,6 @@ const PublicLedger: React.FC<PublicLedgerProps> = ({ user, onBack }) => {
           </button>
         </div>
 
-        {/* Entries List - REMOVED DELETE BUTTON FROM HERE */}
         <div className="space-y-4 pb-28">
           {filteredEntries.length === 0 ? (
             <div className="py-24 text-center opacity-30 flex flex-col items-center gap-4">
@@ -265,20 +257,16 @@ const PublicLedger: React.FC<PublicLedgerProps> = ({ user, onBack }) => {
                 >
                   <div className="flex gap-4 items-center overflow-hidden">
                     <div className={`w-14 h-14 rounded-[22px] flex items-center justify-center shrink-0 shadow-sm border ${entry.dueAmount > 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
-                      {entry.dueAmount > 0 ? <ArrowDownToLine size={28} /> : <ArrowUpFromLine size={28} />}
+                      {entry.dueAmount > 0 ? <ArrowDownToLine size={24} /> : <ArrowUpFromLine size={24} />}
                     </div>
-                    <div className="overflow-hidden">
-                      <h4 className="font-black text-slate-800 text-lg leading-tight truncate">{entry.personName}</h4>
-                      <div className="space-y-0.5 mt-0.5">
-                        <div className="flex items-center gap-1.5">
-                           <Smartphone size={10} className="text-slate-400" />
-                           <p className="text-[11px] font-bold text-slate-500 font-inter">{entry.mobile}</p>
-                        </div>
-                        <p className="text-xs font-black text-blue-600">ব্যালেন্স: ৳ {toBn(Math.abs(entry.dueAmount))}</p>
-                      </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="font-black text-slate-800 text-lg leading-tight truncate">{entry.personName}</p>
+                      <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${entry.dueAmount > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {entry.dueAmount > 0 ? 'পাবো' : 'দেবো'} • {toBn(Math.abs(entry.dueAmount))} টাকা
+                      </p>
                     </div>
                   </div>
-                  <ChevronRight size={20} className="text-slate-200" />
+                  <ChevronRight size={20} className="text-slate-300" />
                 </div>
               </div>
             ))
@@ -286,255 +274,143 @@ const PublicLedger: React.FC<PublicLedgerProps> = ({ user, onBack }) => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {entryToDelete && (
-        <div className="fixed inset-0 z-[200] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-sm rounded-[40px] p-8 shadow-2xl text-center space-y-6 animate-in zoom-in duration-300">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto"><AlertTriangle size={40} /></div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-black text-slate-800">আপনি কি নিশ্চিত?</h3>
-              <p className="text-sm font-bold text-slate-500">"{entryToDelete.personName}" এর লেনদেন তথ্যটি স্থায়ীভাবে মুছে যাবে।</p>
-            </div>
-            <div className="flex gap-3">
-               <button onClick={() => setEntryToDelete(null)} className="flex-1 py-4 bg-slate-100 text-slate-600 font-black rounded-2xl">বাতিল</button>
-               <button onClick={confirmDeleteEntry} className="flex-1 py-4 bg-red-600 text-white font-black rounded-2xl shadow-lg">হ্যাঁ, ডিলিট</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Detailed View Modal */}
+      {/* Detail View Overlay */}
       {showDetailView && selectedEntry && (
-        <div className="fixed inset-0 z-[120] bg-slate-950/60 backdrop-blur-md flex items-end justify-center animate-in fade-in duration-300">
-           <div className="bg-white w-full max-w-md rounded-t-[50px] p-8 pb-12 shadow-2xl animate-in slide-in-from-bottom-8 duration-600 max-h-[95vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                 <h3 className="text-2xl font-black text-slate-800">বিস্তারিত তথ্য</h3>
-                 <button onClick={() => setShowDetailView(false)} className="p-3 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 active:scale-90 transition-all"><X size={24} /></button>
-              </div>
-
-              <div className="flex flex-col items-center gap-4 mb-8 text-center">
-                 <div className="space-y-1">
-                    <h2 className="text-3xl font-black text-slate-800 leading-tight">{selectedEntry.personName}</h2>
-                    <p className="text-blue-500 font-bold font-inter tracking-wide">{selectedEntry.mobile}</p>
-                    <div className="flex items-center justify-center gap-1.5 text-slate-400">
-                       <MapPin size={14} />
-                       <span className="text-sm font-bold">{selectedEntry.address || 'ঠিকানা সংরক্ষিত নেই'}</span>
+        <div className="fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-md flex items-end justify-center">
+            <div className="bg-white w-full max-w-md rounded-t-[45px] p-8 shadow-2xl animate-in slide-in-from-bottom-full duration-500 max-h-[95vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <button onClick={() => setShowDetailView(false)} className="p-2 text-slate-400"><X size={24}/></button>
+                    <div className="text-center flex-1">
+                      <h3 className="font-black text-xl text-slate-800">লেনদেনের বিস্তারিত</h3>
                     </div>
-                 </div>
-              </div>
+                    <button onClick={() => setEntryToDelete(selectedEntry)} className="p-2 text-red-500"><Trash2 size={24}/></button>
+                </div>
 
-              <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100 text-center mb-8">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{selectedEntry.dueAmount >= 0 ? 'বকেয়া পাওনা (দেনাদার)' : 'বকেয়া দেনা (পাওনাদার)'}</p>
-                 <p className={`text-3xl font-black ${selectedEntry.dueAmount >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>৳ {toBn(Math.abs(selectedEntry.dueAmount))}</p>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                 <div className="flex items-center justify-between px-2">
-                    <div className="flex items-center gap-2">
-                       <History size={16} className="text-blue-500" />
-                       <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">লেনদেন ইতিহাস</h4>
+                <div className="bg-slate-50 p-6 rounded-[35px] border border-slate-100 mb-6 flex flex-col items-center gap-4">
+                    <div className={`w-20 h-20 rounded-[30px] flex items-center justify-center border-4 border-white shadow-xl ${selectedEntry.dueAmount > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                      {selectedEntry.dueAmount > 0 ? <ArrowDownToLine size={32} /> : <ArrowUpFromLine size={32} />}
                     </div>
+                    <div className="text-center">
+                        <h4 className="text-2xl font-black text-slate-800">{selectedEntry.personName}</h4>
+                        <p className="text-sm font-bold text-slate-400 mt-1">{selectedEntry.mobile}</p>
+                        <div className={`mt-4 px-6 py-3 rounded-2xl font-black text-lg shadow-sm border ${selectedEntry.dueAmount > 0 ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-rose-500 text-white border-rose-400'}`}>
+                           {selectedEntry.dueAmount > 0 ? 'পাবো' : 'দেবো'} ৳ {toBn(Math.abs(selectedEntry.dueAmount))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                        <History size={18} className="text-blue-600" />
+                        <h5 className="font-black text-slate-800">লেনদেনের ইতিহাস</h5>
+                    </div>
+                    <div className="space-y-3">
+                        {selectedEntry.history?.map((h: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-4 bg-white border border-slate-50 rounded-2xl shadow-sm">
+                                <div className="text-left">
+                                    <p className="text-xs font-black text-slate-800">{h.note}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{new Date(h.date).toLocaleDateString('bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                                </div>
+                                <p className={`font-black text-sm ${h.type === 'pabo' ? 'text-emerald-600' : h.type === 'debo' ? 'text-rose-600' : 'text-blue-600'}`}>
+                                   {h.type === 'pabo' ? '+' : h.type === 'debo' ? '-' : '✓'} {toBn(h.amount)}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-8">
                     <button 
                         onClick={() => {
-                            setSelectedPersonId(selectedEntry.id);
-                            setLedgerFormData({
-                                ...ledgerFormData, 
-                                personName: selectedEntry.personName, 
-                                mobile: selectedEntry.mobile, 
-                                address: selectedEntry.address,
-                                type: 'repay' 
-                            });
-                            setShowLedgerForm(true);
+                          setSelectedPersonId(selectedEntry.id);
+                          setLedgerFormData({...ledgerFormData, type: 'repay'});
+                          setShowLedgerForm(true);
                         }}
-                        className="text-[10px] font-black text-white bg-blue-600 px-5 py-2.5 rounded-full uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                        className="py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
-                        আবারও লেনদেন করুন
+                      <ArrowRightLeft size={18} /> বকেয়া পরিশোধ
                     </button>
-                 </div>
-                 <div className="bg-slate-50/50 rounded-[35px] border border-slate-100 p-4 space-y-3">
-                    {selectedEntry.history && selectedEntry.history.length > 0 ? (
-                        selectedEntry.history.slice().reverse().map((log: any, i: number) => (
-                            <div key={i} className="bg-white p-4 rounded-[24px] border border-slate-50 shadow-sm flex items-center justify-between animate-in fade-in duration-300">
-                                <div className="text-left">
-                                    <p className={`text-[10px] font-black uppercase mb-1 ${log.type === 'pabo' ? 'text-emerald-500' : log.type === 'debo' ? 'text-rose-500' : 'text-blue-500'}`}>{log.note}</p>
-                                    <div className="flex items-center gap-1.5 text-slate-400">
-                                        <Clock size={10} />
-                                        <p className="text-[10px] font-bold">{new Date(log.date).toLocaleDateString('bn-BD')} | {new Date(log.date).toLocaleTimeString('bn-BD', {hour:'2-digit', minute:'2-digit'})}</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-sm font-black text-slate-800">৳ {toBn(log.amount)}</p>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="py-8 text-center opacity-30"><p className="text-xs font-bold">হিস্ট্রি পাওয়া যায়নি</p></div>
-                    )}
-                 </div>
-              </div>
-
-              <div className="flex gap-3">
-                 <a href={`tel:${convertBnToEn(selectedEntry.mobile)}`} className="flex-1 bg-[#0056b3] text-white py-5 rounded-[28px] font-black text-sm flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all font-inter">
-                    <Phone size={18} /> কল করুন
-                 </a>
-                 <button onClick={() => setEntryToDelete(selectedEntry)} className="w-16 h-16 bg-red-50 text-red-500 rounded-[28px] flex items-center justify-center border border-red-100 active:scale-90"><Trash2 size={24} /></button>
-              </div>
-           </div>
+                    <button 
+                        onClick={() => {
+                          setSelectedPersonId(selectedEntry.id);
+                          setLedgerFormData({...ledgerFormData, type: selectedEntry.dueAmount > 0 ? 'pabo' : 'debo'});
+                          setShowLedgerForm(true);
+                        }}
+                        className="py-4 bg-slate-100 text-slate-700 font-black rounded-2xl shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Plus size={18} /> নতুন লেনদেন
+                    </button>
+                </div>
+            </div>
         </div>
       )}
 
       {/* Form Modal */}
       {showLedgerForm && (
-        <div className="fixed inset-0 z-[150] bg-slate-950/60 backdrop-blur-md flex items-end justify-center animate-in fade-in duration-300">
-          <form onSubmit={handleLedgerSubmit} className="bg-white w-full max-w-md rounded-t-[50px] p-8 pb-14 shadow-2xl animate-in slide-in-from-bottom-8 duration-600 max-h-[92vh] overflow-y-auto space-y-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-left">
-                <h3 className="text-3xl font-black text-slate-800">নতুন এন্ট্রি</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">সঠিক তথ্য দিয়ে পূরণ করুন</p>
-              </div>
-              <button type="button" onClick={() => setShowLedgerForm(false)} className="p-3 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 border border-slate-100"><X size={24} /></button>
-            </div>
+        <div className="fixed inset-0 z-[170] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center">
+            <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl space-y-5 animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto text-left">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-black text-xl text-slate-800">{selectedPersonId === 'new' ? 'নতুন হিসাব' : 'লেনদেন যোগ'}</h3>
+                    <button onClick={() => setShowLedgerForm(false)} className="p-2 text-slate-400"><X/></button>
+                </div>
 
-            {/* Dropdown 1: Transaction Type */}
-            <div className="space-y-2 text-left">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 block">লেনদেনের ধরন *</label>
-              <div className="relative">
-                <select 
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[22px] font-black text-slate-800 appearance-none outline-none focus:border-blue-400 transition-all"
-                    value={ledgerFormData.type}
-                    onChange={(e) => setLedgerFormData({...ledgerFormData, type: e.target.value as any})}
-                >
+                <form onSubmit={handleLedgerSubmit} className="space-y-4">
                     {selectedPersonId === 'new' ? (
                         <>
-                            <option value="pabo">হাওলাত দিচ্ছি</option>
-                            <option value="debo">হাওলাত নিচ্ছি</option>
+                            <div className="text-left">
+                                <label className="text-[10px] font-black text-slate-400 block mb-1.5 uppercase pl-1">ব্যক্তির নাম</label>
+                                <input required className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none" placeholder="নাম লিখুন" value={ledgerFormData.personName} onChange={e => setLedgerFormData({...ledgerFormData, personName: e.target.value})} />
+                            </div>
+                            <div className="text-left">
+                                <label className="text-[10px] font-black text-slate-400 block mb-1.5 uppercase pl-1">মোবাইল (ঐচ্ছিক)</label>
+                                <input className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none" placeholder="০১xxxxxxxxx" value={ledgerFormData.mobile} onChange={e => setLedgerFormData({...ledgerFormData, mobile: e.target.value})} />
+                            </div>
                         </>
                     ) : (
-                        (() => {
-                            const person = ledgerEntries.find(p => p.id === selectedPersonId);
-                            if (person && person.dueAmount > 0) { // Debtor (He owes me)
-                                return (
-                                    <>
-                                        <option value="repay">পরিশোধ (তার থেকে পেলাম)</option>
-                                        <option value="pabo">আবারও হাওলাত দিচ্ছি</option>
-                                    </>
-                                );
-                            } else if (person && person.dueAmount < 0) { // Creditor (I owe him)
-                                return (
-                                    <>
-                                        <option value="repay">পরিশোধ (তাকে দিলাম)</option>
-                                        <option value="debo">আবারও হাওলাত নিচ্ছি</option>
-                                    </>
-                                );
-                            } else {
-                                return (
-                                    <>
-                                        <option value="pabo">হাওলাত দিচ্ছি</option>
-                                        <option value="debo">হাওলাত নিচ্ছি</option>
-                                    </>
-                                );
-                            }
-                        })()
-                    )}
-                </select>
-                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300"><ChevronRight className="rotate-90" size={18} /></div>
-              </div>
-            </div>
-
-            {/* Dropdown 2: Person Selection */}
-            <div className="space-y-2 text-left">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 block">ব্যক্তি নির্বাচন করুন *</label>
-              <div className="relative">
-                <select 
-                    className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[22px] font-black text-slate-800 appearance-none outline-none focus:border-blue-400 transition-all"
-                    value={selectedPersonId}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        setSelectedPersonId(val);
-                        if (val === 'new') {
-                            setLedgerFormData({...ledgerFormData, personName: '', mobile: '', address: '', type: 'pabo'});
-                        } else {
-                            const person = ledgerEntries.find(p => p.id === val);
-                            if (person) {
-                                setLedgerFormData({
-                                    ...ledgerFormData, 
-                                    personName: person.personName, 
-                                    mobile: person.mobile, 
-                                    address: person.address,
-                                    type: person.dueAmount !== 0 ? 'repay' : 'pabo'
-                                });
-                            }
-                        }
-                    }}
-                >
-                    <option value="new">নতুন ব্যক্তি (+)</option>
-                    {ledgerEntries.map(p => (
-                        <option key={p.id} value={p.id}>{p.personName} ({p.mobile})</option>
-                    ))}
-                </select>
-                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300"><ChevronRight className="rotate-90" size={18} /></div>
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              {selectedPersonId === 'new' ? (
-                <div className="space-y-5 animate-in slide-in-from-top-2 duration-300">
-                    <div className="text-left">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2 block">ব্যক্তির নাম *</label>
-                        <input required className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[22px] font-bold outline-none focus:border-blue-400 focus:bg-white transition-all shadow-inner" value={ledgerFormData.personName} onChange={e => setLedgerFormData({...ledgerFormData, personName: e.target.value})} placeholder="নাম লিখুন" />
-                    </div>
-                    <div className="text-left">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2 block">মোবাইল নম্বর *</label>
-                        <div className="relative">
-                           <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                           <input required className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[22px] font-black text-slate-800 outline-none focus:border-blue-400 focus:bg-white transition-all shadow-inner font-inter" value={ledgerFormData.mobile} onChange={e => setLedgerFormData({...ledgerFormData, mobile: convertBnToEn(e.target.value)})} placeholder="০১xxxxxxxxx" maxLength={11} />
+                        <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100 text-left">
+                           <p className="text-[10px] font-black text-blue-500 uppercase">ব্যক্তির নাম</p>
+                           <p className="text-base font-black text-slate-800">{ledgerEntries.find(e=>e.id===selectedPersonId)?.personName}</p>
                         </div>
-                    </div>
+                    )}
+
                     <div className="text-left">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2 block">ঠিকানা বা এলাকা</label>
-                        <input className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-[22px] font-bold outline-none focus:border-blue-400 focus:bg-white transition-all shadow-inner" value={ledgerFormData.address} onChange={e => setLedgerFormData({...ledgerFormData, address: e.target.value})} placeholder="ঠিকানা" />
+                        <label className="text-[10px] font-black text-slate-400 block mb-1.5 uppercase pl-1">লেনদেনের ধরণ</label>
+                        <select className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-black outline-none" value={ledgerFormData.type} onChange={e => setLedgerFormData({...ledgerFormData, type: e.target.value as any})}>
+                            <option value="pabo">হাওলাত দিয়েছি (আমি পাবো)</option>
+                            <option value="debo">হাওলাত নিয়েছি (আমি দেবো)</option>
+                            <option value="repay">বকেয়া পরিশোধ</option>
+                        </select>
                     </div>
-                </div>
-              ) : (
-                <div className="p-5 bg-blue-50/50 border border-blue-100 rounded-[32px] text-left space-y-2">
-                    <div className="flex items-center gap-3">
-                       <UserCircle size={20} className="text-blue-500" />
-                       <p className="font-black text-slate-800">{ledgerFormData.personName}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                       <Smartphone size={16} className="text-slate-400" />
-                       <p className="text-xs font-bold text-slate-500 font-inter">{ledgerFormData.mobile}</p>
-                    </div>
-                    {(() => {
-                        const person = ledgerEntries.find(p => p.id === selectedPersonId);
-                        if (person) {
-                            return <p className={`text-[10px] font-black uppercase tracking-widest mt-2 px-3 py-1 bg-white rounded-full w-fit ${person.dueAmount >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>বর্তমান ব্যালেন্স: ৳ {toBn(Math.abs(person.dueAmount))}</p>
-                        }
-                    })()}
-                </div>
-              )}
 
-              <div className="text-left">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2 block">টাকার পরিমাণ *</label>
-                <div className="relative">
-                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-300">৳</div>
-                   <input required type="number" className="w-full pl-12 pr-6 py-5 bg-slate-50 border border-slate-100 rounded-[22px] font-black text-3xl text-slate-800 outline-none focus:border-blue-400 focus:bg-white transition-all shadow-inner font-inter" value={ledgerFormData.amount} onChange={e => setLedgerFormData({...ledgerFormData, amount: e.target.value})} placeholder="0.00" />
-                </div>
-              </div>
+                    <div className="text-left">
+                        <label className="text-[10px] font-black text-slate-400 block mb-1.5 uppercase pl-1">টাকার অংক (৳)</label>
+                        <input required type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-black outline-none text-xl" placeholder="৳ ০০" value={ledgerFormData.amount} onChange={e => setLedgerFormData({...ledgerFormData, amount: e.target.value})} />
+                    </div>
+
+                    <button disabled={isSubmitting} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 mt-4">
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : 'হিসাব সংরক্ষণ করুন'}
+                    </button>
+                </form>
             </div>
+        </div>
+      )}
 
-            <button 
-              disabled={isSubmitting} 
-              className={`w-full py-6 bg-slate-900 text-white font-black rounded-[30px] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-70' : ''}`}
-            >
-              {isSubmitting ? <Loader2 className="animate-spin" /> : (
-                <>
-                   <CheckCircle2 size={20} />
-                   হিসাবটি সম্পন্ন করুন
-                </>
-              )}
-            </button>
-          </form>
+      {/* Delete Confirmation Modal */}
+      {entryToDelete && (
+        <div className="fixed inset-0 z-[180] bg-slate-900/60 backdrop-blur-sm p-5 flex items-center justify-center">
+            <div className="bg-white w-full max-w-xs rounded-[40px] p-8 shadow-2xl text-center space-y-6 animate-in zoom-in duration-300">
+                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto">
+                    <AlertTriangle size={32} />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg text-slate-800">আপনি কি নিশ্চিত?</h3>
+                  <p className="text-xs font-bold text-slate-400 mt-2">এই ব্যক্তির সকল হিসাব স্থায়ীভাবে মুছে যাবে!</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => setEntryToDelete(null)} className="py-4 bg-slate-100 text-slate-500 font-black rounded-2xl">না</button>
+                  <button onClick={confirmDeleteEntry} className="py-4 bg-red-600 text-white font-black rounded-2xl shadow-lg shadow-red-500/20">হ্যাঁ, মুছুন</button>
+                </div>
+            </div>
         </div>
       )}
     </div>

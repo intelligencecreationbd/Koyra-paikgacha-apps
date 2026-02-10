@@ -29,7 +29,7 @@ import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebase
 import { getDatabase, ref, onValue, remove, set, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBg-atwF990YQ8PvOCwKPDxu8IZlQgOZr4',
+  apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
   authDomain: 'koyra-paikgacha.firebaseapp.com',
   databaseURL: 'https://koyra-paikgacha-default-rtdb.firebaseio.com',
   projectId: 'koyra-paikgacha',
@@ -42,7 +42,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(app);
 
 const Header: React.FC<{ title: string; onBack: () => void }> = ({ title, onBack }) => (
-  <div className="flex items-center gap-4 mb-6">
+  <div className="flex items-center gap-4 mb-6 text-left">
     <button onClick={onBack} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all">
       <ChevronLeft size={20} className="text-slate-800" />
     </button>
@@ -228,12 +228,11 @@ const AdminDirectoryMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setShowContactForm(false);
   };
 
-  // If Contact Form is active, show the form in mian body
   if (showContactForm) {
     return (
       <div className="animate-in slide-in-from-right-4 duration-500 pb-20 space-y-6">
-        <div className="flex items-center gap-4 mb-2">
-          <button onClick={() => setShowContactForm(false)} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm active:scale-90 transition-all">
+        <div className="flex items-center gap-4 mb-2 text-left">
+          <button onClick={() => setShowContactForm(false)} className="p-3 bg-white rounded-xl shadow-sm active:scale-90 transition-all">
             <ChevronLeft size={20} className="text-slate-800" />
           </button>
           <div className="text-left">
@@ -268,7 +267,6 @@ const AdminDirectoryMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <EditField label="নাম *" value={contactForm.name} onChange={v=>setContactForm({...contactForm, name:v})} placeholder="সম্পূর্ণ নাম লিখুন" icon={<UserIcon size={18}/>} />
                 <EditField label="উপাধি/পদবী" value={contactForm.designation} onChange={v=>setContactForm({...contactForm, designation:v})} placeholder="যেমন: ইউপি মেম্বার" icon={<Tag size={18}/>} />
                 
-                {/* Mobile Section */}
                 <div className="space-y-3">
                     <EditField label="প্রাথমিক মোবাইল নম্বর *" value={contactForm.mobile} onChange={v=>setContactForm({...contactForm, mobile:v})} placeholder="০১xxxxxxxxx" icon={<Smartphone size={18}/>} />
                     
@@ -290,7 +288,6 @@ const AdminDirectoryMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 
                 <EditField label="অফিস বা এলাকা (ঠিকানা)" value={contactForm.address} onChange={v=>setContactForm({...contactForm, address:v})} placeholder="ঠিকানা লিখুন" icon={<MapPin size={18}/>} />
 
-                {/* Custom Info Section */}
                 <div className="space-y-3">
                     {contactForm.customInfo.map((info, idx) => (
                       <div key={idx} className="p-5 bg-slate-50/50 rounded-3xl border border-slate-100 space-y-4 animate-in slide-in-from-bottom-2 duration-300 relative">
@@ -343,7 +340,6 @@ const AdminDirectoryMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500 pb-20">
         <Header title="মোবাইল নাম্বার ম্যানেজার" onBack={onBack} />
         
-        {/* Navigation Breadcrumbs */}
         <div className="bg-slate-50 p-4 rounded-[26px] flex items-center gap-2 overflow-x-auto no-scrollbar border border-slate-100 shadow-inner">
             <button onClick={resetToRoot} className={`p-2 rounded-lg transition-colors shrink-0 ${currentPath.length === 0 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-200'}`}>
                 <Home size={16}/>
@@ -361,7 +357,6 @@ const AdminDirectoryMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             ))}
         </div>
 
-        {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3">
             <button 
                 onClick={() => { setEditingCategoryId(null); setCatName(''); setShowCatForm(true); }}
@@ -381,12 +376,10 @@ const AdminDirectoryMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </button>
         </div>
 
-        {/* Content List */}
         <div className="space-y-4">
-            {/* Sub-Categories */}
             {subCategories.length > 0 && (
                 <div className="space-y-3">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">সাব-ক্যাটাগরি সমূহ</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-left">সাব-ক্যাটাগরি সমূহ</p>
                     {subCategories.map(cat => (
                         <div key={cat.id} className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
                             <button 
@@ -421,9 +414,8 @@ const AdminDirectoryMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </div>
             )}
 
-            {/* Contacts List */}
             <div className="space-y-3 pt-2">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">কন্টাক্ট লিস্ট ({currentContacts.length})</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-left">কন্টাক্ট লিস্ট ({currentContacts.length})</p>
                 {currentContacts.length === 0 && subCategories.length === 0 ? (
                     <div className="py-20 text-center opacity-30 flex flex-col items-center gap-3">
                         <Info size={40} className="text-slate-400" />
@@ -452,7 +444,7 @@ const AdminDirectoryMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                   }); 
                                   setShowContactForm(true); 
                                 }} className="p-3 bg-blue-50 text-blue-600 rounded-xl active:scale-90 transition-all">
-                                    <Edit2 size={18}/>
+                                    <Edit2 size={16}/>
                                 </button>
                                 <button onClick={() => handleDeleteContact(item.id)} className="p-3 bg-red-50 text-red-500 rounded-xl active:scale-90 transition-all opacity-40 group-hover:opacity-100">
                                     <Trash2 size={18}/>
@@ -464,10 +456,9 @@ const AdminDirectoryMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             </div>
         </div>
 
-        {/* Category Modal (Still modal because it's simpler and not asked to be inline) */}
         {showCatForm && (
             <div className="fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center">
-                <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl space-y-6 animate-in zoom-in duration-300">
+                <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl space-y-6 animate-in zoom-in duration-300 text-left">
                     <div className="flex justify-between items-center">
                         <h3 className="font-black text-xl text-slate-800">{editingCategoryId ? 'ক্যাটাগরি সংশোধন' : 'নতুন সাব-ক্যাটাগরি'}</h3>
                         <button onClick={()=>setShowCatForm(false)} className="p-2 text-slate-400 hover:text-red-500"><X/></button>
