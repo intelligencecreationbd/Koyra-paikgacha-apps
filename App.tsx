@@ -11,6 +11,7 @@ import HotlineDetail from './pages/HotlineDetail';
 import DigitalLedger from './pages/DigitalLedger';
 import OnlineHaat from './pages/OnlineHaat';
 import WeatherPage from './pages/WeatherPage';
+import LoanApplication from './pages/LoanApplication';
 import DateTimeBox from './components/DateTimeBox';
 import PublicDownload from './components/PublicDownload';
 import { Submission, Notice, User } from './types';
@@ -81,7 +82,7 @@ const BottomNav: React.FC = () => {
     }
     if (pathname === '/services') {
       navigate('/');
-    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth', '/download'].includes(pathname)) {
+    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth', '/download', '/loan'].includes(pathname)) {
       navigate('/services');
     } else if (pathname === '/ledger') {
       navigate('/auth');
@@ -414,6 +415,7 @@ const AppContent: React.FC = () => {
           <Route path="/info-submit" element={<InfoSubmit onSubmission={(s) => setSubmissions([...submissions, s])} />} />
           <Route path="/auth" element={<UserAuth onLogin={setCurrentUser} />} />
           <Route path="/ledger" element={currentUser ? <DigitalLedger /> : <Navigate to="/auth?to=ledger" />} />
+          <Route path="/loan" element={currentUser ? <LoanApplication /> : <Navigate to="/auth?to=loan" />} />
           <Route path="/online-haat" element={<OnlineHaat />} />
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/download" element={

@@ -19,13 +19,13 @@ import {
   HeartPulse,
   Truck,
   Building,
-  UserCheck
+  UserCheck,
+  HandCoins
 } from 'lucide-react';
 import { MainMenu } from './types';
 
 /**
  * FINALIZED ORDER: Locked/Finished Public Modules First
- * Order: 1, 3, 10, 4, 9, 13, 15, 14, 7, 12
  */
 export const CATEGORIES: MainMenu[] = [
   {
@@ -71,6 +71,13 @@ export const CATEGORIES: MainMenu[] = [
     ]
   },
   {
+    id: '16',
+    name: 'লোন আবেদন',
+    icon: 'HandCoins',
+    color: '#0056b3',
+    subMenus: []
+  },
+  {
     id: '9',
     name: 'ঐতিহ্য',
     icon: 'History',
@@ -108,7 +115,7 @@ export const CATEGORIES: MainMenu[] = [
     color: '#673AB7',
     subMenus: [
       { id: '15-1', name: 'ডাক্তার', icon: 'Stethoscope' },
-      { id: '15-2', name: 'হাসপাতাল', icon: 'HeartPulse' },
+      { id: '15-2', name: 'হাসপাল', icon: 'HeartPulse' },
       { id: '15-3', name: 'অ্যাম্বুলেন্স', icon: 'Truck' },
       { id: '15-4', name: 'সেচ্ছাসেবী রক্তদাতা', icon: 'Users' },
       { id: '15-5', name: 'ব্যাংক ও বীমা', icon: 'Building' },
@@ -160,5 +167,6 @@ export const ICON_MAP: Record<string, any> = {
   HeartPulse,
   Truck,
   Building,
-  UserCheck
+  UserCheck,
+  HandCoins
 };
