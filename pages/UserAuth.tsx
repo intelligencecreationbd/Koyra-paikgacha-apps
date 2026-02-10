@@ -66,7 +66,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const [regData, setRegData] = useState({
     fullName: '', email: '', mobile: '', village: '', password: '', confirmPassword: ''
   });
-  const [forgotMobile, setForgotMobile] = useState('');
+  const [forgotEmail, setForgotEmail] = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem('kp_logged_in_user');
@@ -95,7 +95,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
     setIsSubmitting(true);
     try {
-      // 1. Find user by mobile in Firestore
       const q = query(collection(db, "users"), where("mobile", "==", cleanMobile));
       const querySnapshot = await getDocs(q);
       
@@ -114,10 +113,8 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         return;
       }
 
-      // 2. Auth via Email
       const userCredential = await signInWithEmailAndPassword(auth, userEmail, loginData.password);
       
-      // Update local storage and state
       const finalUser = { ...userData, uid: userCredential.user.uid };
       setLoggedInUser(finalUser);
       localStorage.setItem('kp_logged_in_user', JSON.stringify(finalUser));
@@ -146,6 +143,10 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       setErrorMsg('সবগুলো তথ্য পূরণ করা বাধ্যতামূলক।');
       return;
     }
+    if (!email.includes('@') || !email.includes('.')) {
+      setErrorMsg('সঠিক ইমেইল এড্রেস প্রদান করুন।');
+      return;
+    }
     if (cleanMobile.length !== 11) {
       setErrorMsg('সঠিক মোবাইল নম্বর দিন।');
       return;
@@ -161,7 +162,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
     setIsSubmitting(true);
     try {
-      // 1. Check if mobile already exists
       const q = query(collection(db, "users"), where("mobile", "==", cleanMobile));
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -170,10 +170,8 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         return;
       }
 
-      // 2. Create Auth User
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // 3. Save to Firestore
       const memberId = `KP${Date.now().toString().slice(-8)}`;
       const userData = {
         uid: userCredential.user.uid,
@@ -187,13 +185,9 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       };
       
       await setDoc(doc(db, "users", userCredential.user.uid), userData);
-
-      // 4. Send Verification
       await sendEmailVerification(userCredential.user);
       
       setSuccessMsg('নিবন্ধন সফল! আপনার ইমেইল চেক করে ভেরিফিকেশন লিঙ্কটি ওপেন করুন।');
-      
-      // Logout after registration to force verification/clean login
       await signOut(auth);
       
       setTimeout(() => {
@@ -216,30 +210,29 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    const cleanMobile = convertDigits(forgotMobile);
-    if (cleanMobile.length !== 11) {
-      setErrorMsg('সঠিক মোবাইল নম্বর দিন।');
+    setSuccessMsg('');
+    
+    if (!forgotEmail || !forgotEmail.includes('@')) {
+      setErrorMsg('সঠিক ইমেইল এড্রেস প্রদান করুন।');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const q = query(collection(db, "users"), where("mobile", "==", cleanMobile));
-      const snap = await getDocs(q);
-      
-      if (snap.empty) {
-        setErrorMsg('এই নম্বরে কোনো অ্যাকাউন্ট পাওয়া যায়নি।');
+      await sendPasswordResetEmail(auth, forgotEmail);
+      setSuccessMsg('আপনার ইমেইলে পাসওয়ার্ড রিসেট লিঙ্ক পাঠানো হয়েছে।');
+      setForgotEmail('');
+      setTimeout(() => {
+        setMode('login');
+        setSuccessMsg('');
+      }, 6000);
+    } catch (err: any) {
+      console.error(err);
+      if (err.code === 'auth/user-not-found') {
+        setErrorMsg('এই ইমেইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি।');
       } else {
-        const userEmail = snap.docs[0].data().email;
-        await sendPasswordResetEmail(auth, userEmail);
-        setSuccessMsg('আপনার ইমেইলে পাসওয়ার্ড রিসেট লিঙ্ক পাঠানো হয়েছে।');
-        setTimeout(() => {
-          setMode('login');
-          setSuccessMsg('');
-        }, 5000);
+        setErrorMsg('লিঙ্ক পাঠাতে সমস্যা হয়েছে। সঠিক ইমেইল দিন।');
       }
-    } catch (err) {
-      setErrorMsg('ইমেইল পাঠাতে সমস্যা হয়েছে। পরে চেষ্টা করুন।');
     } finally {
       setIsSubmitting(false);
     }
@@ -260,22 +253,22 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
           <div className="text-center">
             <h2 className="text-2xl font-black text-slate-800">পাসওয়ার্ড পুনরুদ্ধার</h2>
-            <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">আপনার নিবন্ধিত মোবাইল নম্বরটি দিন</p>
+            <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">আপনার নিবন্ধিত ইমেইল এড্রেসটি দিন</p>
           </div>
           <div className="bg-white p-8 rounded-[40px] shadow-2xl border border-blue-50 space-y-6 text-left">
-            <Field label="মোবাইল নম্বর" value={forgotMobile} onChange={v => setForgotMobile(convertDigits(v))} placeholder="০১xxxxxxxxx" maxLength={11} icon={<Smartphone size={18}/>} />
+            <Field label="ইমেইল এড্রেস" value={forgotEmail} type="email" onChange={v => setForgotEmail(v)} placeholder="example@gmail.com" icon={<Mail size={18}/>} />
             <div className="space-y-3">
               <button 
                 onClick={handleForgotPassword}
                 disabled={isSubmitting}
                 className="w-full py-5 bg-[#0056b3] text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
               >
-                {isSubmitting ? <Loader2 className="animate-spin" /> : 'ইমেইলে লিঙ্ক পাঠান'}
+                {isSubmitting ? <Loader2 className="animate-spin" /> : 'লিঙ্ক পাঠান'}
               </button>
-              {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center">{errorMsg}</p>}
-              {successMsg && <p className="text-green-600 text-[11px] font-black text-center">{successMsg}</p>}
+              {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center px-4 animate-bounce">{errorMsg}</p>}
+              {successMsg && <p className="text-green-600 text-[11px] font-black text-center px-4">{successMsg}</p>}
             </div>
-            <button onClick={() => setMode('login')} className="w-full text-slate-400 font-bold text-xs uppercase tracking-widest hover:underline text-center">লগইন পেজে ফিরুন</button>
+            <button onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} className="w-full text-slate-400 font-bold text-xs uppercase tracking-widest hover:underline text-center">লগইন পেজে ফিরুন</button>
           </div>
         </div>
       )}
@@ -337,7 +330,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                   {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center px-4 animate-bounce">{errorMsg}</p>}
                 </div>
                 <div className="text-center pt-2">
-                  <button type="button" onClick={() => setMode('forgot')} className="text-[11px] font-black text-blue-600 uppercase tracking-widest hover:underline opacity-70">পাসওয়ার্ড ভুলে গেছেন?</button>
+                  <button type="button" onClick={() => { setMode('forgot'); setErrorMsg(''); setSuccessMsg(''); }} className="text-[11px] font-black text-blue-600 uppercase tracking-widest hover:underline opacity-70">পাসওয়ার্ড ভুলে গেছেন?</button>
                 </div>
               </form>
             ) : (
