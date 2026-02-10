@@ -176,6 +176,7 @@ const AppContent: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const longPressTimer = useRef<any>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const isLanding = location.pathname === '/';
@@ -227,6 +228,19 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleLongPressStart = () => {
+    longPressTimer.current = setTimeout(() => {
+      setShowAdminLogin(true);
+      setIsDrawerOpen(false);
+    }, 3000);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+  };
+
   const handleUpdatePassword = async (newPass: string) => {
     if (!newPass.trim()) return;
     try {
@@ -275,7 +289,13 @@ const AppContent: React.FC = () => {
                   <h2 className="font-black text-xl text-[#0056b3] dark:text-blue-400 shimmer-text">কয়রা-পাইকগাছা</h2>
                   <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest animate-pulse mt-0.5">ডিজিটাল অ্যাপে স্বাগতম</p>
                 </div>
-                <button onClick={() => setIsDrawerOpen(false)} className="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm text-slate-400 dark:text-slate-500 transition-colors">
+                <button 
+                  onPointerDown={handleLongPressStart}
+                  onPointerUp={handleLongPressEnd}
+                  onPointerLeave={handleLongPressEnd}
+                  onClick={() => setIsDrawerOpen(false)} 
+                  className="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm text-slate-400 dark:text-slate-500 transition-colors active:scale-90"
+                >
                   <X size={20} />
                 </button>
               </div>
@@ -345,7 +365,7 @@ const AppContent: React.FC = () => {
               <div className="flex flex-col items-center">
                 <h1 className="font-black text-2xl tracking-tight text-white leading-none drop-shadow-sm">কয়রা-পাইকগাছা</h1>
                 <span className="text-[10px] font-black text-cyan-300 tracking-wider animate-sub-title mt-1.5 uppercase">
-                  এক ক্লিকে স<span onClick={() => setShowAdminLogin(true)} className="cursor-default">ক</span>ল তথ্য
+                  এক ক্লিকে সকল তথ্য
                 </span>
               </div>
               <div className="flex items-center gap-1">
