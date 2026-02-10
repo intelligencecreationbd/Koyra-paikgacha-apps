@@ -136,6 +136,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
     const { fullName, email, mobile, village, password, confirmPassword } = regData;
     const cleanMobile = convertDigits(mobile);
 
@@ -162,6 +163,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
     setIsSubmitting(true);
     try {
+      // 1. Check Mobile Existence
       const q = query(collection(db, "users"), where("mobile", "==", cleanMobile));
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -170,8 +172,10 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         return;
       }
 
+      // 2. Create User Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
+      // 3. Prepare User Data for Firestore
       const memberId = `KP${Date.now().toString().slice(-8)}`;
       const userData = {
         uid: userCredential.user.uid,
@@ -184,23 +188,41 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         createdAt: new Date().toISOString()
       };
       
+      // 4. Save to Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), userData);
-      await sendEmailVerification(userCredential.user);
+
+      // 5. Send Verification Email using auth.currentUser
+      try {
+        if (auth.currentUser) {
+          await sendEmailVerification(auth.currentUser);
+          console.log("Verification email sent successfully.");
+          setSuccessMsg('নিবন্ধন সফল! আপনার ইমেইলে একটি ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে, দয়া করে স্প্যাম ফোল্ডার চেক করুন।');
+        }
+      } catch (verificationError: any) {
+        console.error("Verification email failed:", verificationError);
+        alert(`ভেরিফিকেশন ইমেইল পাঠানো যায়নি: ${verificationError.message}`);
+        setSuccessMsg('নিবন্ধন হয়েছে, কিন্তু ইমেইল পাঠানো সম্ভব হয়নি। পরে চেষ্টা করুন।');
+      }
       
-      setSuccessMsg('নিবন্ধন সফল! আপনার ইমেইল চেক করে ভেরিফিকেশন লিঙ্কটি ওপেন করুন।');
+      // Logout after registration to force email verification awareness
       await signOut(auth);
       
       setTimeout(() => {
         setMode('login');
         setSuccessMsg('');
-      }, 5000);
+      }, 7000);
 
     } catch (err: any) {
-      console.error(err);
+      console.error("Registration Error:", err);
       if (err.code === 'auth/email-already-in-use') {
         setErrorMsg('এই ইমেইলটি ইতিমধ্যে নিবন্ধিত।');
+      } else if (err.code === 'auth/invalid-email') {
+        setErrorMsg('ইমেইল ফরম্যাট সঠিক নয়।');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setErrorMsg('ইমেইল/পাসওয়ার্ড সাইন-আপ বর্তমানে বন্ধ রয়েছে।');
       } else {
-        setErrorMsg('নিবন্ধন করতে সমস্যা হয়েছে। সঠিক ইমেইল প্রদান করুন।');
+        alert(`রেজিস্ট্রেশনে ত্রুটি: ${err.message}`);
+        setErrorMsg('নিবন্ধন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
       }
     } finally {
       setIsSubmitting(false);
@@ -219,7 +241,9 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
     setIsSubmitting(true);
     try {
+      // Correct use of input email and handle error cases
       await sendPasswordResetEmail(auth, forgotEmail);
+      console.log(`Password reset link sent to: ${forgotEmail}`);
       setSuccessMsg('আপনার ইমেইলে পাসওয়ার্ড রিসেট লিঙ্ক পাঠানো হয়েছে।');
       setForgotEmail('');
       setTimeout(() => {
@@ -227,10 +251,13 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         setSuccessMsg('');
       }, 6000);
     } catch (err: any) {
-      console.error(err);
+      console.error("Password Reset Error:", err);
       if (err.code === 'auth/user-not-found') {
         setErrorMsg('এই ইমেইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি।');
+      } else if (err.code === 'auth/too-many-requests') {
+        setErrorMsg('অনেকবার চেষ্টা করা হয়েছে। কিছুক্ষণ পর ট্রাই করুন।');
       } else {
+        alert(`রিসেট লিঙ্ক পাঠাতে ব্যর্থ: ${err.message}`);
         setErrorMsg('লিঙ্ক পাঠাতে সমস্যা হয়েছে। সঠিক ইমেইল দিন।');
       }
     } finally {
