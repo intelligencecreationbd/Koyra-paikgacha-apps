@@ -11,7 +11,6 @@ import HotlineDetail from './pages/HotlineDetail';
 import DigitalLedger from './pages/DigitalLedger';
 import OnlineHaat from './pages/OnlineHaat';
 import WeatherPage from './pages/WeatherPage';
-import LoanApplication from './pages/LoanApplication';
 import DateTimeBox from './components/DateTimeBox';
 import PublicDownload from './components/PublicDownload';
 import { Submission, Notice, User } from './types';
@@ -82,7 +81,7 @@ const BottomNav: React.FC = () => {
     }
     if (pathname === '/services') {
       navigate('/');
-    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth', '/download', '/loan'].includes(pathname)) {
+    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth', '/download'].includes(pathname)) {
       navigate('/services');
     } else if (pathname === '/ledger') {
       navigate('/auth');
@@ -122,40 +121,66 @@ const BottomNav: React.FC = () => {
   );
 };
 
-const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean) => void }> = ({ isDarkMode, setIsDarkMode }) => {
+const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean) => void, appLogo: string }> = ({ isDarkMode, setIsDarkMode, appLogo }) => {
   const navigate = useNavigate();
   return (
-    <div className={`min-h-screen w-full relative flex flex-col items-center pt-10 pb-12 px-6 transition-colors duration-500 overflow-x-hidden ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
-      <div className="w-full flex justify-end pr-2 mb-2 animate-in fade-in duration-1000">
-          <button 
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-4 rounded-[22px] bg-slate-900 dark:bg-slate-800 shadow-2xl text-white transition-all active:scale-90"
-          >
-            {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
-          </button>
-      </div>
-      <div className="w-full max-w-sm mb-16 animate-in slide-in-from-top-6 duration-1000">
-         <DateTimeBox />
-      </div>
-      <div className="flex-1 flex flex-col items-center justify-center gap-14 w-full max-w-sm animate-in fade-in zoom-in duration-1000 delay-200">
-         <div className="space-y-6 text-center">
-            <h1 className="text-5xl font-black tracking-tight text-[#0056b3] dark:text-blue-500 drop-shadow-sm">
-              কয়রা-পাইকগাছা
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 font-bold text-xl px-4 leading-relaxed max-w-[320px] mx-auto">
-              আপনার এলাকার সকল ডিজিটাল সেবা এখন এক ঠিকানায়
-            </p>
+    <div className={`h-screen w-full relative flex flex-col items-center pt-2 pb-6 px-6 transition-colors duration-500 overflow-hidden ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
+      {/* Dark mode toggle - moved to absolute to save space */}
+      <button 
+        onClick={() => setIsDarkMode(!isDarkMode)}
+        className="absolute top-4 right-6 p-3.5 rounded-[18px] bg-slate-900 dark:bg-slate-800 shadow-2xl text-white transition-all active:scale-90 z-20"
+      >
+        {isDarkMode ? <Sun size={22} /> : <Moon size={22} />}
+      </button>
+
+      {/* Main Content Center */}
+      <div className="flex-1 flex flex-col items-center justify-start w-full max-w-sm pt-2">
+         
+         {/* Round Logo Bar - No space above it as per screenshot */}
+         <div className="relative mb-3 animate-in zoom-in duration-1000">
+            <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-[80px] animate-pulse"></div>
+            <div className="relative w-56 h-56 bg-white rounded-full shadow-[0_25px_60px_-12px_rgba(0,0,0,0.2)] flex items-center justify-center border-[10px] border-white overflow-hidden p-2.5">
+              <img 
+                src={appLogo} 
+                className="w-full h-full object-cover rounded-full" 
+                alt="App Logo"
+                onError={(e) => {
+                  (e.target as any).src = 'https://raw.githubusercontent.com/StackBlitz-User-Assets/logo/main/kp-logo.png';
+                }}
+              />
+            </div>
          </div>
-         <button 
-           onClick={() => navigate('/services')}
-           className="group relative w-[80%] py-6 bg-[#0056b3] dark:bg-blue-600 text-white font-black text-xl rounded-[35px] shadow-[0_20px_40px_-10px_rgba(0,86,179,0.4)] overflow-hidden active:scale-95 transition-all flex items-center justify-center gap-4"
-         >
-            সকল সেবা <ArrowRight size={26} className="group-hover:translate-x-2 transition-transform" />
-         </button>
+
+         {/* DateTimeBox - Tightly packed below logo */}
+         <div className="w-full mb-4 animate-in slide-in-from-top-4 duration-1000">
+            <DateTimeBox />
+         </div>
+
+         {/* Title and Subtitle */}
+         <div className="space-y-4 text-center animate-in fade-in zoom-in duration-1000 delay-200">
+            <div className="space-y-2">
+              <h1 className="text-5xl font-black tracking-tight text-[#0056b3] dark:text-blue-500 drop-shadow-sm">
+                কয়রা-পাইকগাছা
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 font-bold text-lg px-4 leading-snug max-w-[320px] mx-auto">
+                আপনার এলাকার সকল ডিজিটাল সেবা এখন এক ঠিকানায়
+              </p>
+            </div>
+            
+            {/* CTA Button */}
+            <button 
+              onClick={() => navigate('/services')}
+              className="group relative w-full mt-4 py-5 bg-[#0056b3] dark:bg-blue-600 text-white font-black text-xl rounded-[35px] shadow-[0_20px_40px_-10px_rgba(0,86,179,0.4)] overflow-hidden active:scale-95 transition-all flex items-center justify-center gap-4 mx-auto max-w-[260px]"
+            >
+                সকল সেবা <ArrowRight size={26} className="group-hover:translate-x-2 transition-transform" />
+            </button>
+         </div>
       </div>
-      <div className="mt-auto pt-10 flex flex-col items-center justify-center gap-1.5 opacity-90 animate-in slide-in-from-bottom-4 duration-1000 delay-500">
-          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Development by</p>
-          <p className="text-[13px] font-black tracking-[0.05em] text-[#0056b3] dark:text-blue-400 uppercase">Intelligence Creation BD</p>
+
+      {/* Footer credits - Pins to bottom and visible on same screen */}
+      <div className="w-full pb-4 flex flex-col items-center justify-center gap-1 opacity-90 animate-in slide-in-from-bottom-4 duration-1000 delay-500">
+          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Development by</p>
+          <p className="text-[12px] font-black tracking-[0.05em] text-[#0056b3] dark:text-blue-400 uppercase">Intelligence Creation BD</p>
       </div>
     </div>
   );
@@ -406,7 +431,7 @@ const AppContent: React.FC = () => {
 
       <main className={`max-w-md mx-auto ${isLanding ? 'p-0 m-0 w-full h-screen' : 'min-h-[calc(100vh-64px)] pb-40'}`}>
         <Routes>
-          <Route path="/" element={<LandingScreen isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} />} />
+          <Route path="/" element={<LandingScreen isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} appLogo={appLogo} />} />
           <Route path="/services" element={<Home notices={notices} isAdmin={isAdminLoggedIn} user={currentUser} />} />
           <Route path="/category/:id/*" element={<CategoryView />} />
           <Route path="/hotline" element={<HotlineDetail />} />
@@ -415,7 +440,6 @@ const AppContent: React.FC = () => {
           <Route path="/info-submit" element={<InfoSubmit onSubmission={(s) => setSubmissions([...submissions, s])} />} />
           <Route path="/auth" element={<UserAuth onLogin={setCurrentUser} />} />
           <Route path="/ledger" element={currentUser ? <DigitalLedger /> : <Navigate to="/auth?to=ledger" />} />
-          <Route path="/loan" element={currentUser ? <LoanApplication /> : <Navigate to="/auth?to=loan" />} />
           <Route path="/online-haat" element={<OnlineHaat />} />
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/download" element={

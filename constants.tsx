@@ -19,8 +19,7 @@ import {
   HeartPulse,
   Truck,
   Building,
-  UserCheck,
-  HandCoins
+  UserCheck
 } from 'lucide-react';
 import { MainMenu } from './types';
 
@@ -69,13 +68,6 @@ export const CATEGORIES: MainMenu[] = [
       { id: '4-1', name: 'আইনজীবী' },
       { id: '4-2', name: 'সার্ভেয়ার' }
     ]
-  },
-  {
-    id: '16',
-    name: 'লোন আবেদন',
-    icon: 'HandCoins',
-    color: '#0056b3',
-    subMenus: []
   },
   {
     id: '9',
@@ -167,6 +159,5 @@ export const ICON_MAP: Record<string, any> = {
   HeartPulse,
   Truck,
   Building,
-  UserCheck,
-  HandCoins
+  UserCheck
 };
