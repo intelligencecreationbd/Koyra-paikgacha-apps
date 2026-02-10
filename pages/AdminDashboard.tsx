@@ -129,6 +129,7 @@ export default function AdminDashboard({ submissions, notices, onUpdateNotices, 
   const [users, setUsers] = useState<StoredUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [newNoticeText, setNewNoticeText] = useState('');
+  const [newPassInput, setNewPassInput] = useState('');
 
   useEffect(() => {
     let unsubs: (() => void)[] = [];
@@ -143,14 +144,31 @@ export default function AdminDashboard({ submissions, notices, onUpdateNotices, 
 
   const handleAddNotice = async () => {
     if (!newNoticeText.trim()) return;
-    const newNotice = { id: Date.now().toString(), content: newNoticeText, date: new Date().toLocaleDateString() };
-    const updatedNotices = [newNotice, ...notices];
-    onUpdateNotices(updatedNotices);
-    setNewNoticeText('');
+    const id = Date.now().toString();
+    const newNotice = { id, content: newNoticeText, date: new Date().toLocaleDateString() };
+    try {
+      await set(ref(db, `notices/${id}`), newNotice);
+      setNewNoticeText('');
+    } catch (e) {
+      alert('নোটিশ পাবলিশ করতে সমস্যা হয়েছে!');
+    }
   };
 
-  const deleteNotice = (id: string) => {
-    onUpdateNotices(notices.filter(n => n.id !== id));
+  const deleteNotice = async (id: string) => {
+    try {
+      await remove(ref(db, `notices/${id}`));
+    } catch (e) {
+      alert('মুছে ফেলা সম্ভব হয়নি।');
+    }
+  };
+
+  const handlePassUpdate = () => {
+    if (newPassInput.trim()) {
+      onUpdatePassword(newPassInput);
+      setNewPassInput('');
+    } else {
+      alert('দয়া করে নতুন পাসওয়ার্ড লিখুন।');
+    }
   };
 
   return (
@@ -159,15 +177,12 @@ export default function AdminDashboard({ submissions, notices, onUpdateNotices, 
         <div className="space-y-6 animate-in fade-in duration-500">
           <Header title="এডমিন ড্যাশবোর্ড" onBack={() => navigate('/')} />
           <div className="flex flex-col gap-3">
-            {/* Priority Modules */}
             <MenuListItem onClick={() => setCurrentView('hotline_mgmt')} icon={<ShieldAlert size={26} />} label="জরুরি হটলাইন ম্যানেজমেন্ট" color="#FF4D4D" />
             <MenuListItem onClick={() => setCurrentView('directory_mgmt')} icon={<Phone size={26} />} label="মোবাইল নাম্বার ম্যানেজার" color="#673AB7" />
             <MenuListItem onClick={() => setCurrentView('news_mgmt')} icon={<Newspaper size={26} />} label="সংবাদ ম্যানেজার" color="#4CAF50" />
             <MenuListItem onClick={() => setCurrentView('haat_mgmt')} icon={<ShoppingBag size={26} />} label="অনলাইন হাট ম্যানেজার" color="#F1C40F" />
             <MenuListItem onClick={() => setCurrentView('bus_mgmt')} icon={<Bus size={26} />} label="বাস কাউন্টার ম্যানেজার" color="#E67E22" />
             <MenuListItem onClick={() => setCurrentView('legal_mgmt')} icon={<Scale size={26} />} label="আইনি সেবা ম্যানেজার" color="#2980B9" />
-            
-            {/* Standard Modules */}
             <MenuListItem onClick={() => setCurrentView('users')} icon={<Users size={26} />} label="ইউজার লিস্ট" color="#2ECC71" />
             <MenuListItem onClick={() => setCurrentView('notices')} icon={<Megaphone size={26} />} label="নোটিশ" color="#FF9F43" />
             <MenuListItem onClick={() => setCurrentView('user_submissions')} icon={<Inbox size={26} />} label="তথ্য পাঠিয়েছেন" color="#E91E63" badge={submissions.length} />
@@ -176,29 +191,12 @@ export default function AdminDashboard({ submissions, notices, onUpdateNotices, 
         </div>
       )}
 
-      {currentView === 'hotline_mgmt' && (
-        <AdminHotlineMgmt onBack={() => setCurrentView('menu')} />
-      )}
-
-      {currentView === 'directory_mgmt' && (
-        <AdminDirectoryMgmt onBack={() => setCurrentView('menu')} />
-      )}
-
-      {currentView === 'news_mgmt' && (
-        <AdminNewsMgmt onBack={() => setCurrentView('menu')} />
-      )}
-
-      {currentView === 'haat_mgmt' && (
-        <AdminHaatMgmt onBack={() => setCurrentView('menu')} />
-      )}
-
-      {currentView === 'bus_mgmt' && (
-        <AdminBusMgmt onBack={() => setCurrentView('menu')} />
-      )}
-
-      {currentView === 'legal_mgmt' && (
-        <AdminLegalMgmt onBack={() => setCurrentView('menu')} />
-      )}
+      {currentView === 'hotline_mgmt' && <AdminHotlineMgmt onBack={() => setCurrentView('menu')} />}
+      {currentView === 'directory_mgmt' && <AdminDirectoryMgmt onBack={() => setCurrentView('menu')} />}
+      {currentView === 'news_mgmt' && <AdminNewsMgmt onBack={() => setCurrentView('menu')} />}
+      {currentView === 'haat_mgmt' && <AdminHaatMgmt onBack={() => setCurrentView('menu')} />}
+      {currentView === 'bus_mgmt' && <AdminBusMgmt onBack={() => setCurrentView('menu')} />}
+      {currentView === 'legal_mgmt' && <AdminLegalMgmt onBack={() => setCurrentView('menu')} />}
       
       {currentView === 'users' && (
         <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
@@ -256,8 +254,8 @@ export default function AdminDashboard({ submissions, notices, onUpdateNotices, 
                  <p className="text-sm font-bold text-slate-400 text-center px-4 leading-relaxed">অ্যাডমিন প্যানেলের নিরাপত্তা বজায় রাখতে নিয়মিত পাসওয়ার্ড পরিবর্তন করুন।</p>
              </div>
              <EditField label="বর্তমান পাসওয়ার্ড" value={adminPassword} onChange={()=>{}} placeholder="Current Password" icon={<ShieldCheck size={18}/>} type="password" />
-             <EditField label="নতুন পাসওয়ার্ড" value="" onChange={onUpdatePassword} placeholder="New Password" icon={<Lock size={18}/>} type="password" />
-             <button className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl active:scale-95 transition-all">পাসওয়ার্ড আপডেট করুন</button>
+             <EditField label="নতুন পাসওয়ার্ড" value={newPassInput} onChange={setNewPassInput} placeholder="New Password" icon={<Lock size={18}/>} type="password" />
+             <button onClick={handlePassUpdate} className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl active:scale-95 transition-all">পাসওয়ার্ড আপডেট করুন</button>
           </div>
         </div>
       )}
