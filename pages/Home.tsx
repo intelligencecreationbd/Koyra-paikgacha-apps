@@ -63,6 +63,10 @@ const Home: React.FC<HomeProps> = ({ notices, isAdmin, user }) => {
                   if (user) navigate('/ledger');
                   else navigate('/auth?to=ledger');
                 }
+                else if (category.id === '16') {
+                  if (user) navigate('/loan');
+                  else navigate('/auth?to=loan');
+                }
                 else if (category.id === '7') navigate('/online-haat');
                 else if (category.id === '10') navigate('/weather');
                 else navigate(`/category/${category.id}`);
