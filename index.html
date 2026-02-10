@@ -13,6 +13,16 @@
                 extend: {
                     colors: {
                         notice: '#F0F9FF',
+                    },
+                    animation: {
+                        'gradient-x': 'gradient-x 3s ease infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        'gradient-x': {
+                            '0%, 100%': { 'background-position': '0% 50%' },
+                            '50%': { 'background-position': '100% 50%' },
+                        }
                     }
                 }
             }
@@ -175,6 +185,52 @@
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
+        }
+
+        /* Super Colorful Gradient for Download Button */
+        .download-btn-animate {
+            background: linear-gradient(-45deg, #FF0080, #7928CA, #0070F3, #23D5AB, #FF8A00, #00FF75);
+            background-size: 600% 600%;
+            animation: gradient-flow 4s ease infinite;
+            border: none !important;
+            box-shadow: 0 12px 30px rgba(121, 40, 202, 0.5);
+        }
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Rainbow Text Animation */
+        .animate-rainbow-text {
+            background: linear-gradient(to right, #ef4444, #3b82f6, #10b981, #f59e0b, #ef4444);
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: rainbow-text-flow 3s linear infinite;
+        }
+        @keyframes rainbow-text-flow {
+            to { background-position: 200% center; }
+        }
+
+        /* Red Question Mark Animation */
+        .animate-question {
+            animation: q-scale 0.8s infinite alternate cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: inline-block;
+        }
+        @keyframes q-scale {
+            from { transform: scale(1) rotate(-5deg); filter: drop-shadow(0 0 2px red); }
+            to { transform: scale(1.6) rotate(10deg); filter: drop-shadow(0 0 15px red); }
+        }
+
+        /* Live Download Icon Animation */
+        .live-download-icon {
+            animation: live-bounce 1.5s infinite;
+        }
+        @keyframes live-bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-6px) scale(1.2); }
         }
 
         /* Custom Scrollbar */

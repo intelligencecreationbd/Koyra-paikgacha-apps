@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { HashRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Sun, Moon, Lock, ChevronLeft, LogOut, Home as HomeIcon, User as UserIcon, PlusCircle, Menu, X, ArrowRight, Sparkles, NotebookTabs, MessageSquare, UserCircle } from 'lucide-react';
+import { Sun, Moon, Lock, ChevronLeft, LogOut, Home as HomeIcon, User as UserIcon, PlusCircle, Menu, X, ArrowRight, Sparkles, NotebookTabs, MessageSquare, UserCircle, Download, ShieldCheck, Zap, Heart, Star, Smartphone, Camera, Gift, Bus, CloudSun, Newspaper, Scale, Phone } from 'lucide-react';
 import Home from './pages/Home';
 import CategoryView from './pages/CategoryView';
 import InfoSubmit from './pages/InfoSubmit';
@@ -12,7 +12,25 @@ import DigitalLedger from './pages/DigitalLedger';
 import OnlineHaat from './pages/OnlineHaat';
 import WeatherPage from './pages/WeatherPage';
 import DateTimeBox from './components/DateTimeBox';
+import PublicDownload from './components/PublicDownload';
 import { Submission, Notice, User } from './types';
+
+// Firebase Imports
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyBg-atwF990YQ8PvOCwKPDxu8IZlQgOZr4',
+  authDomain: 'koyra-paikgacha.firebaseapp.com',
+  databaseURL: 'https://koyra-paikgacha-default-rtdb.firebaseio.com',
+  projectId: 'koyra-paikgacha',
+  storageBucket: 'koyra-paikgacha.firebasestorage.app',
+  messagingSenderId: '637481870946',
+  appId: '1:637481870946:web:ef71c1e96b2729b2eb133b'
+};
+
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getDatabase(app);
 
 const LogInIcon = ({ size }: { size: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y2="12"/></svg>
@@ -35,32 +53,22 @@ const BottomNav: React.FC = () => {
   const isSubmit = location.pathname === '/info-submit';
   const isProfile = location.pathname === '/auth';
 
-  // NEW SMART BACK LOGIC: Concept of "Up" instead of just "Temporal Back"
   const handleGlobalBack = () => {
     const { pathname, search } = location;
-
-    // 1. Profile view with ?item=id
     if (search.includes('item=')) {
-      // Stripping the query param goes back to the current list
       navigate(pathname, { replace: true });
       return;
     }
-
-    // 2. Deep Nested Categories (/category/15/sub1/sub2...)
     if (pathname.startsWith('/category/')) {
-      const parts = pathname.split('/').filter(Boolean); // ['category', '15', 'sub1', 'sub2']
+      const parts = pathname.split('/').filter(Boolean);
       if (parts.length > 2) {
-        // Pop last part to go up one level
         const parentPath = '/' + parts.slice(0, -1).join('/');
         navigate(parentPath);
       } else {
-        // At the category root (e.g., /category/15), go to main menu
         navigate('/services');
       }
       return;
     }
-
-    // 3. Hotline Nested Routes
     if (pathname.startsWith('/hotline/')) {
       const parts = pathname.split('/').filter(Boolean);
       if (parts.length > 1) {
@@ -71,19 +79,15 @@ const BottomNav: React.FC = () => {
       }
       return;
     }
-
-    // 4. Standalone modules
     if (pathname === '/services') {
       navigate('/');
-    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth'].includes(pathname)) {
+    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth', '/download'].includes(pathname)) {
       navigate('/services');
     } else if (pathname === '/ledger') {
       navigate('/auth');
     } else if (pathname === '/') {
       const confirmExit = window.confirm("আপনি কি অ্যাপটি বন্ধ করতে চান?");
-      if (confirmExit) {
-        // Exit logic
-      }
+      if (confirmExit) { }
     } else {
       navigate('/services');
     }
@@ -121,7 +125,6 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
   const navigate = useNavigate();
   return (
     <div className={`min-h-screen w-full relative flex flex-col items-center pt-10 pb-12 px-6 transition-colors duration-500 overflow-x-hidden ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
-      
       <div className="w-full flex justify-end pr-2 mb-2 animate-in fade-in duration-1000">
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)}
@@ -130,11 +133,9 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
             {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
           </button>
       </div>
-
       <div className="w-full max-w-sm mb-16 animate-in slide-in-from-top-6 duration-1000">
          <DateTimeBox />
       </div>
-
       <div className="flex-1 flex flex-col items-center justify-center gap-14 w-full max-w-sm animate-in fade-in zoom-in duration-1000 delay-200">
          <div className="space-y-6 text-center">
             <h1 className="text-5xl font-black tracking-tight text-[#0056b3] dark:text-blue-500 drop-shadow-sm">
@@ -144,7 +145,6 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
               আপনার এলাকার সকল ডিজিটাল সেবা এখন এক ঠিকানায়
             </p>
          </div>
-
          <button 
            onClick={() => navigate('/services')}
            className="group relative w-[80%] py-6 bg-[#0056b3] dark:bg-blue-600 text-white font-black text-xl rounded-[35px] shadow-[0_20px_40px_-10px_rgba(0,86,179,0.4)] overflow-hidden active:scale-95 transition-all flex items-center justify-center gap-4"
@@ -152,7 +152,6 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
             সকল সেবা <ArrowRight size={26} className="group-hover:translate-x-2 transition-transform" />
          </button>
       </div>
-
       <div className="mt-auto pt-10 flex flex-col items-center justify-center gap-1.5 opacity-90 animate-in slide-in-from-bottom-4 duration-1000 delay-500">
           <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Development by</p>
           <p className="text-[13px] font-black tracking-[0.05em] text-[#0056b3] dark:text-blue-400 uppercase">Intelligence Creation BD</p>
@@ -169,25 +168,46 @@ const AppContent: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [loginInput, setLoginInput] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
-  const [notices, setNotices] = useState<Notice[]>([
-    { id: '1', content: 'কয়রা-পাইকগাছা ডিজিটাল অ্যাপে আপনাকে স্বাগতম!', date: new Date().toLocaleDateString() },
-    { id: '2', content: 'জরুরি রক্তের প্রয়োজনে আমাদের সেচ্ছাসেবক টীমের সাথে যোগাযোগ করুন।', date: new Date().toLocaleDateString() }
-  ]);
+  const [notices, setNotices] = useState<Notice[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [appLogo, setAppLogo] = useState('https://raw.githubusercontent.com/StackBlitz-User-Assets/logo/main/kp-logo.png');
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('kp_logged_in_user');
     return saved ? JSON.parse(saved) : null;
   });
 
+  const navigate = useNavigate();
   const location = useLocation();
   const isLanding = location.pathname === '/';
 
+  // Fetch admin settings, notices and app logo from database
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    const passRef = ref(db, 'admin_settings/password');
+    onValue(passRef, (snap) => {
+      if (snap.exists()) {
+        setAdminPassword(snap.val());
+      } else {
+        set(passRef, 'Tayeb');
+      }
+    });
+
+    const noticeRef = ref(db, 'notices');
+    onValue(noticeRef, (snap) => {
+      const data = snap.val();
+      setNotices(data ? Object.values(data) : []);
+    });
+
+    const logoRef = ref(db, 'app_settings/logo');
+    onValue(logoRef, (snap) => {
+      if (snap.exists()) {
+        setAppLogo(snap.val());
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isDarkMode) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
   }, [isDarkMode]);
 
   useEffect(() => {
@@ -207,6 +227,35 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const handleUpdatePassword = async (newPass: string) => {
+    if (!newPass.trim()) return;
+    try {
+      await set(ref(db, 'admin_settings/password'), newPass);
+      setAdminPassword(newPass);
+      alert('পাসওয়ার্ড সফলভাবে আপডেট করা হয়েছে।');
+    } catch (e) {
+      alert('পাসওয়ার্ড আপডেট করতে সমস্যা হয়েছে!');
+    }
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && isAdminLoggedIn) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        try {
+          await set(ref(db, 'app_settings/logo'), base64);
+          setAppLogo(base64);
+          alert('এপসের প্রোফাইল পিকচার আপডেট হয়েছে!');
+        } catch (err) {
+          alert('আপলোড ব্যর্থ হয়েছে!');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleLogout = () => {
     setIsAdminLoggedIn(false);
     setCurrentUser(null);
@@ -216,7 +265,6 @@ const AppContent: React.FC = () => {
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-white text-[#1A1A1A]'}`}>
-      
       {!isLanding && (
         <>
           <div className={`fixed inset-0 z-[100] transition-opacity duration-300 ${isDrawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -231,12 +279,11 @@ const AppContent: React.FC = () => {
                   <X size={20} />
                 </button>
               </div>
-              
               <div className="flex-1 overflow-y-auto pt-4 space-y-4">
                  <nav className="px-4 space-y-1">
                     {currentUser ? (
                       <button 
-                        onClick={() => { setIsDrawerOpen(false); window.location.hash = '/auth'; }}
+                        onClick={() => { setIsDrawerOpen(false); navigate('/auth'); }}
                         className="w-full flex items-center gap-4 p-4 mb-2 bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl text-left active:scale-[0.98] transition-all group"
                       >
                         <div className="w-12 h-12 rounded-xl border-2 border-white dark:border-slate-700 shadow-sm overflow-hidden bg-slate-100 shrink-0">
@@ -255,29 +302,32 @@ const AppContent: React.FC = () => {
                         <ArrowRight size={16} className="text-blue-400/50 group-hover:translate-x-1 transition-transform" />
                       </button>
                     ) : (
-                      <MenuLink icon={<UserIcon size={20} />} label="আমার প্রোফাইল" onClick={() => { setIsDrawerOpen(false); window.location.hash = '/auth'; }} />
+                      <MenuLink icon={<UserIcon size={20} />} label="আমার প্রোফাইল" onClick={() => { setIsDrawerOpen(false); navigate('/auth'); }} />
                     )}
-                    
-                    <MenuLink icon={<PlusCircle size={20} />} label="তথ্য প্রদান" onClick={() => { setIsDrawerOpen(false); window.location.hash = '/info-submit'; }} />
-                    <MenuLink icon={<MessageSquare size={20} />} label="Help Chat" onClick={() => { setIsDrawerOpen(false); window.location.hash = '/hotline'; }} />
-                    
+                    <MenuLink icon={<PlusCircle size={20} />} label="তথ্য প্রদান" onClick={() => { setIsDrawerOpen(false); navigate('/info-submit'); }} />
+                    <MenuLink icon={<MessageSquare size={20} />} label="Help Chat" onClick={() => { setIsDrawerOpen(false); navigate('/hotline'); }} />
                     {isAdminLoggedIn && (
-                       <MenuLink icon={<Lock size={20} />} label="এডমিন প্যানেল" onClick={() => { setIsDrawerOpen(false); window.location.hash = '/admin'; }} />
+                       <MenuLink icon={<Lock size={20} />} label="এডমিন প্যানেল" onClick={() => { setIsDrawerOpen(false); navigate('/admin'); }} />
                     )}
                  </nav>
               </div>
-
-              <div className="p-6 border-t border-slate-100 dark:border-slate-800 space-y-6 bg-slate-50/30 dark:bg-slate-900/20">
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 space-y-3 bg-slate-50/30 dark:bg-slate-900/20">
                 {(isAdminLoggedIn || currentUser) ? (
                   <button onClick={handleLogout} className="w-full py-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all">
                     <LogOut size={20} /> লগআউট করুন
                   </button>
                 ) : (
-                  <button onClick={() => { setIsDrawerOpen(false); window.location.hash = '/auth'; }} className="w-full py-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-red-400 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all">
+                  <button onClick={() => { setIsDrawerOpen(false); navigate('/auth'); }} className="w-full py-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-red-400 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all">
                     <LogInIcon size={20} /> লগইন করুন
                   </button>
                 )}
-                <div className="flex flex-col items-center justify-center gap-1 float-small">
+
+                <button onClick={() => { setIsDrawerOpen(false); navigate('/download'); }} className="w-full py-4 download-btn-animate text-white rounded-2xl font-black flex items-center justify-center gap-3 active:scale-95 transition-all overflow-hidden relative group">
+                    <Download size={22} className="live-download-icon group-hover:animate-pulse" />
+                    <span className="shimmer-text">এপস ডাউনলোড করুন</span>
+                </button>
+
+                <div className="flex flex-col items-center justify-center gap-1 float-small mt-3">
                   <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Development by</p>
                   <p className="text-xs font-black tracking-widest shimmer-text uppercase">Intelligence Creation BD</p>
                 </div>
@@ -291,13 +341,12 @@ const AppContent: React.FC = () => {
                 <button onClick={() => setIsDrawerOpen(true)} className="p-2.5 rounded-xl text-white/70 hover:text-white transition-all duration-300 active:scale-90">
                   <Menu size={20} strokeWidth={2} />
                 </button>
-                <button onClick={() => setShowAdminLogin(true)} className={`group p-2.5 rounded-xl transition-all duration-300 active:scale-90 ${isAdminLoggedIn ? 'text-white bg-white/10' : 'text-white/70 hover:text-white hover:bg-white/10'}`}>
-                  <Lock size={20} strokeWidth={2} />
-                </button>
               </div>
               <div className="flex flex-col items-center">
                 <h1 className="font-black text-2xl tracking-tight text-white leading-none drop-shadow-sm">কয়রা-পাইকগাছা</h1>
-                <span className="text-[10px] font-black text-cyan-300 tracking-wider animate-sub-title mt-1.5 uppercase">এক ক্লিকে সকল তথ্য</span>
+                <span className="text-[10px] font-black text-cyan-300 tracking-wider animate-sub-title mt-1.5 uppercase">
+                  এক ক্লিকে স<span onClick={() => setShowAdminLogin(true)} className="cursor-default">ক</span>ল তথ্য
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => setIsDarkMode(!isDarkMode)} className="group p-2.5 rounded-xl text-white/70 transition-all duration-300 hover:text-white hover:bg-white/10 active:scale-90">
@@ -347,14 +396,20 @@ const AppContent: React.FC = () => {
           <Route path="/ledger" element={currentUser ? <DigitalLedger /> : <Navigate to="/auth?to=ledger" />} />
           <Route path="/online-haat" element={<OnlineHaat />} />
           <Route path="/weather" element={<WeatherPage />} />
+          <Route path="/download" element={
+            <PublicDownload 
+              appLogo={appLogo} 
+              isAdminLoggedIn={isAdminLoggedIn} 
+              onLogoChange={handleLogoChange} 
+            />
+          } />
           <Route 
             path="/admin" 
-            element={isAdminLoggedIn ? <AdminDashboard submissions={submissions} notices={notices} onUpdateNotices={setNotices} onUpdatePassword={setAdminPassword} adminPassword={adminPassword} onUpdateSubmissions={setSubmissions} /> : <Navigate to="/auth" />} 
+            element={isAdminLoggedIn ? <AdminDashboard submissions={submissions} notices={notices} onUpdateNotices={setNotices} onUpdatePassword={handleUpdatePassword} adminPassword={adminPassword} onUpdateSubmissions={setSubmissions} /> : <Navigate to="/auth" />} 
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
-
       {!isLanding && <BottomNav />}
     </div>
   );
