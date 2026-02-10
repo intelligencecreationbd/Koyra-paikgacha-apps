@@ -12,6 +12,6 @@ jobs:
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          ​firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KOYRA_PAIKGACHA }}'
           channelId: live
           projectId: koyra-paikgacha
