@@ -32,7 +32,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBg-atwF990YQ8PvOCwKPDxu8IZlQgOZr4',
+  apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
   authDomain: 'koyra-paikgacha.firebaseapp.com',
   databaseURL: 'https://koyra-paikgacha-default-rtdb.firebaseio.com',
   projectId: 'koyra-paikgacha',
@@ -195,7 +195,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       try {
         if (auth.currentUser) {
           await sendEmailVerification(auth.currentUser);
-          console.log("Verification email sent successfully.");
+          console.log("Verification email sent successfully using new key.");
           setSuccessMsg('নিবন্ধন সফল! আপনার ইমেইলে একটি ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে, দয়া করে স্প্যাম ফোল্ডার চেক করুন।');
         }
       } catch (verificationError: any) {
@@ -241,7 +241,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
     setIsSubmitting(true);
     try {
-      // Correct use of input email and handle error cases
+      // Send reset email using input email and catch any restriction errors
       await sendPasswordResetEmail(auth, forgotEmail);
       console.log(`Password reset link sent to: ${forgotEmail}`);
       setSuccessMsg('আপনার ইমেইলে পাসওয়ার্ড রিসেট লিঙ্ক পাঠানো হয়েছে।');
