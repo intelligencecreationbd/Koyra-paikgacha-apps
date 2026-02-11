@@ -11,7 +11,6 @@ import {
   CalendarClock,
   ArrowRight,
   ShieldCheck,
-  // Fix: Added Info to the import list from lucide-react
   Info
 } from 'lucide-react';
 import { User } from '../types';
@@ -21,7 +20,7 @@ import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebase
 import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBg-atwF990YQ8PvOCwKPDxu8IZlQgOZr4',
+  apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
   authDomain: 'koyra-paikgacha.firebaseapp.com',
   databaseURL: 'https://koyra-paikgacha-default-rtdb.firebaseio.com',
   projectId: 'koyra-paikgacha',
@@ -31,7 +30,7 @@ const firebaseConfig = {
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+const dbFs = getFirestore(app);
 
 const LoanApplication: React.FC = () => {
   const navigate = useNavigate();
@@ -62,7 +61,7 @@ const LoanApplication: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "loan_requests"), {
+      await addDoc(collection(dbFs, "loan_requests"), {
         userId: user.memberId,
         userName: user.fullName,
         userMobile: user.mobile,
