@@ -19,7 +19,8 @@ import {
   MapPin,
   Eye,
   EyeOff,
-  Mail
+  Mail,
+  Calendar
 } from 'lucide-react';
 
 // Firebase Imports
@@ -37,7 +38,7 @@ const firebaseConfig = {
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+const dbFs = getFirestore(app);
 
 const toBn = (num: string | number) => 
     (num || '').toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
@@ -48,6 +49,7 @@ interface StoredUser {
   fullName: string;
   mobile: string;
   village: string;
+  dob: string;
   status?: 'active' | 'suspended';
   photoURL?: string;
   email?: string;
@@ -74,7 +76,7 @@ const AdminUserList: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
-    const usersCollection = collection(db, 'users');
+    const usersCollection = collection(dbFs, 'users');
     const unsubscribe = onSnapshot(usersCollection, (snapshot) => {
       const list = snapshot.docs.map(doc => ({ ...doc.data(), uid: doc.id } as StoredUser));
       setUsers(list);
@@ -102,7 +104,7 @@ const AdminUserList: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const handleUpdateStatus = async (uid: string, currentStatus: string) => {
     const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
     try {
-        const userRef = doc(db, 'users', uid);
+        const userRef = doc(dbFs, 'users', uid);
         await updateDoc(userRef, { status: newStatus });
         if (selectedUser) setSelectedUser({ ...selectedUser, status: newStatus as any });
         alert(`ইউজার সফলভাবে ${newStatus === 'suspended' ? 'সাসপেন্ড' : 'সক্রিয়'} করা হয়েছে।`);
@@ -115,7 +117,7 @@ const AdminUserList: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     if (!selectedUser?.uid) return;
     setIsSaving(true);
     try {
-        const userRef = doc(db, 'users', selectedUser.uid);
+        const userRef = doc(dbFs, 'users', selectedUser.uid);
         await updateDoc(userRef, editForm);
         setSelectedUser({ ...selectedUser, ...editForm } as any);
         setIsEditing(false);
@@ -238,6 +240,7 @@ const AdminUserList: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <div className="space-y-4 animate-in fade-in duration-300">
                             <EditInput label="ইউজারের পুরো নাম" value={editForm.fullName} onChange={v => setEditForm({...editForm, fullName: v})} icon={<UserIcon size={18}/>} />
                             <EditInput label="গ্রামের নাম" value={editForm.village} onChange={v => setEditForm({...editForm, village: v})} icon={<MapPin size={18}/>} />
+                            <EditInput label="জন্ম তারিখ" value={editForm.dob} type="date" onChange={v => setEditForm({...editForm, dob: v})} icon={<Calendar size={18}/>} />
                             <EditInput label="মোবাইল নম্বর" value={editForm.mobile} onChange={v => setEditForm({...editForm, mobile: v})} icon={<Smartphone size={18}/>} />
                             <EditInput label="ইমেইল এড্রেস" value={editForm.email} onChange={v => setEditForm({...editForm, email: v})} icon={<Mail size={18}/>} />
                             
@@ -263,6 +266,7 @@ const AdminUserList: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <div className="grid gap-2 animate-in fade-in duration-300">
                             <InfoBox label="মোবাইল নম্বর" value={selectedUser.mobile} icon={<Smartphone size={18} className="text-blue-500" />} />
                             <InfoBox label="মেম্বার আইডি" value={selectedUser.memberId} icon={<Hash size={18} className="text-slate-400" />} />
+                            <InfoBox label="জন্ম তারিখ" value={selectedUser.dob || 'তথ্য নেই'} icon={<Calendar size={18} className="text-pink-500" />} />
                             
                             <div className="relative group">
                                 <InfoBox 
