@@ -6,10 +6,6 @@ import {
   Bus, 
   PhoneCall, 
   MapPin, 
-  Info, 
-  Smartphone,
-  Tag,
-  Clock,
   Navigation
 } from 'lucide-react';
 import { BusCounter } from '../types';
@@ -62,25 +58,10 @@ const SkeletonBus = () => (
   </div>
 );
 
-// High-quality professional colors for the icons
 const THEME_COLORS = [
-  '#4F46E5', // Indigo
-  '#0EA5E9', // Sky Blue
-  '#10B981', // Emerald
-  '#F59E0B', // Amber
-  '#EF4444', // Red
-  '#8B5CF6', // Violet
-  '#EC4899', // Pink
-  '#14B8A6', // Teal
-  '#F97316', // Orange
-  '#6366F1', // Royal Blue
+  '#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1',
 ];
 
-/**
- * @LOCKED_COMPONENT
- * @Section Public Transport View (যাতায়াত)
- * @Status Design & Content Finalized
- */
 const PublicTransport: React.FC<{ 
   subId?: string; 
   busId?: string; 
@@ -115,7 +96,6 @@ const PublicTransport: React.FC<{
     return busData.find(b => b.id === busId);
   }, [busData, busId]);
 
-  // Combined fare string for the header
   const fareInfo = useMemo(() => {
     if (!currentBus) return null;
     const parts = [];
@@ -130,7 +110,6 @@ const PublicTransport: React.FC<{
 
   if (isLoading) return <div className="p-5 space-y-4"><SkeletonBus /></div>;
 
-  // View 1: Route List
   if (!subId) {
     return (
       <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -154,21 +133,13 @@ const PublicTransport: React.FC<{
                   <div className="flex items-center gap-4 relative z-10">
                      <div 
                         className="p-3 rounded-2xl transition-all shadow-inner group-hover:scale-110"
-                        style={{ 
-                          backgroundColor: `${color}15`, 
-                          color: color,
-                          border: `1px solid ${color}20`
-                        }}
+                        style={{ backgroundColor: `${color}15`, color: color, border: `1px solid ${color}20` }}
                      >
                         <Navigation size={20} />
                      </div>
                      <span className="font-black text-lg text-[#1A1A1A]">{route.name}</span>
                   </div>
                   <ArrowRight size={20} className="text-slate-200 group-hover:text-blue-600 transition-colors z-10" />
-                  <div 
-                    className="absolute -right-4 -bottom-4 w-12 h-12 rounded-full blur-2xl opacity-10"
-                    style={{ backgroundColor: color }}
-                  ></div>
                 </button>
               );
             })}
@@ -177,7 +148,6 @@ const PublicTransport: React.FC<{
     );
   }
 
-  // View 2: Bus List for specific route
   if (subId && !busId) {
     return (
       <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -204,11 +174,7 @@ const PublicTransport: React.FC<{
                     <div className="flex items-center gap-4 flex-1 overflow-hidden relative z-10">
                       <div 
                         className="p-3 rounded-2xl transition-all shadow-inner group-hover:scale-110 duration-300"
-                        style={{ 
-                          backgroundColor: `${iconColor}15`, 
-                          color: iconColor,
-                          border: `1px solid ${iconColor}20`
-                        }}
+                        style={{ backgroundColor: `${iconColor}15`, color: iconColor, border: `1px solid ${iconColor}20` }}
                       >
                           <Bus size={22} strokeWidth={2.5} className="drop-shadow-sm" />
                       </div>
@@ -218,10 +184,6 @@ const PublicTransport: React.FC<{
                       </div>
                     </div>
                     <ArrowRight size={20} className="text-slate-200 group-hover:text-blue-600 transition-colors shrink-0 z-10" />
-                    <div 
-                      className="absolute -right-4 -bottom-4 w-12 h-12 rounded-full blur-2xl opacity-10 group-hover:opacity-30 transition-opacity"
-                      style={{ backgroundColor: iconColor }}
-                    ></div>
                   </button>
                 );
               })}
@@ -231,10 +193,9 @@ const PublicTransport: React.FC<{
     );
   }
 
-  // View 3: Bus Detail (Counters & Fares) - CENTERED DESIGN
   if (busId && currentBus) {
     return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 pb-10">
+      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 pb-20">
         <div className="flex items-start justify-between mb-2">
           <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90 shrink-0">
             <ChevronLeft size={24} />
@@ -247,11 +208,9 @@ const PublicTransport: React.FC<{
               <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-0.5 truncate">{fareInfo}</p>
             )}
           </div>
-
           <div className="w-12 h-12"></div>
         </div>
 
-        {/* Counter List */}
         <div className="space-y-3">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] pl-2 text-left">কাউন্টার ও যোগাযোগ</p>
           {currentBus.counters?.map((c, idx) => {
@@ -261,17 +220,14 @@ const PublicTransport: React.FC<{
                 <div className="text-left flex items-center gap-4 overflow-hidden">
                   <div 
                     className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner"
-                    style={{ 
-                        backgroundColor: `${color}10`, 
-                        color: color,
-                        border: `1px solid ${color}15`
-                    }}
+                    style={{ backgroundColor: `${color}10`, color: color, border: `1px solid ${color}15` }}
                   >
                     <MapPin size={18} />
                   </div>
                   <div className="overflow-hidden">
                     <p className="text-base font-black text-slate-800 leading-tight truncate">{c.name}</p>
-                    <p className="text-xs font-bold text-slate-400 font-inter mt-1 tracking-tight">{c.mobile}</p>
+                    {/* Ensure mobile numbers always display in English digits */}
+                    <p className="text-xs font-bold text-slate-400 font-inter mt-1 tracking-tight">{convertBnToEn(c.mobile)}</p>
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">

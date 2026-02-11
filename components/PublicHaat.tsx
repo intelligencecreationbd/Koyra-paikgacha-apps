@@ -13,15 +13,17 @@ import {
   Sparkles,
   RefreshCw,
   X,
-  MessageCircle
+  MessageCircle,
+  Plus
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Firebase Imports
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBg-atwF990YQ8PvOCwKPDxu8IZlQgOZr4',
+  apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
   authDomain: 'koyra-paikgacha.firebaseapp.com',
   databaseURL: 'https://koyra-paikgacha-default-rtdb.firebaseio.com',
   projectId: 'koyra-paikgacha',
@@ -53,24 +55,23 @@ interface Product {
   photo?: string;
   description?: string;
   timestamp: string;
+  userId?: string;
 }
 
-const HAAT_CATEGORIES = [
-  { id: 'all', name: 'সব পণ্য', color: '#1A1A1A' },
-  { id: 'fish', name: 'তাজা মাছ', color: '#3498DB' },
-  { id: 'veg', name: 'শাক-সবজি', color: '#27AE60' },
-  { id: 'meat', name: 'মাংস ও ডিম', color: '#E74C3C' },
-  { id: 'fruit', name: 'ফলমূল', color: '#F39C12' },
-  { id: 'grocery', name: 'নিত্যপণ্য', color: '#8E44AD' }
-];
+interface Category {
+  id: string;
+  name: string;
+}
 
 /**
  * @LOCKED_COMPONENT
  * @Section Public Online Haat Service
- * @Status Design & Logic Finalized
+ * @Status Design Updated - Dynamic Categories Integration
  */
 const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -78,8 +79,9 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   useEffect(() => {
     setLoading(true);
+    // Products listener
     const haatRef = ref(db, 'online_haat');
-    const unsubscribe = onValue(haatRef, snap => {
+    const unsubscribeProd = onValue(haatRef, snap => {
       const val = snap.val();
       if (val) {
         const list = Object.keys(val).map(key => ({ ...val[key], id: key }));
@@ -89,8 +91,25 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       }
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    // Categories listener
+    const catRef = ref(db, 'online_haat_categories');
+    const unsubscribeCat = onValue(catRef, snap => {
+      const val = snap.val();
+      const list = val ? Object.keys(val).map(key => ({ ...val[key], id: key })) : [];
+      setCategories(list);
+    });
+
+    return () => {
+      unsubscribeProd();
+      unsubscribeCat();
+    };
   }, []);
+
+  const fullCategories = useMemo(() => [
+    { id: 'all', name: 'সব পণ্য' },
+    ...categories
+  ], [categories]);
 
   const filteredProducts = useMemo(() => {
     const term = (searchTerm || '').toLowerCase();
@@ -101,6 +120,10 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       return matchCat && matchSearch;
     });
   }, [products, activeCategory, searchTerm]);
+
+  const handleAddProductClick = () => {
+    navigate('/auth?to=haat');
+  };
 
   if (selectedProduct) {
     return (
@@ -124,7 +147,7 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                )}
                <div className="absolute top-6 left-6 px-4 py-2 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-white/50">
                   <span className="text-xs font-black text-blue-600 uppercase tracking-widest">
-                    {HAAT_CATEGORIES.find(c => c.id === selectedProduct.category)?.name}
+                    {fullCategories.find(c => c.id === selectedProduct.category)?.name || 'পণ্য'}
                   </span>
                </div>
             </div>
@@ -191,14 +214,22 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   return (
     <div className="animate-in fade-in duration-500 space-y-6">
-       <header className="flex items-center gap-4">
-          <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm active:scale-90 transition-all">
+       <header className="relative flex items-center justify-between min-h-[64px]">
+          <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm active:scale-90 transition-all shrink-0 relative z-10">
              <ChevronLeft size={20} className="text-slate-800" />
           </button>
-          <div className="text-left overflow-hidden">
+          
+          <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none w-full px-16">
              <h2 className="text-xl font-black text-slate-800 leading-tight">অনলাইন হাট</h2>
-             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">টাটকা পণ্য কিনুন সহজে</p>
+             <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-0.5">আমার বাজার</p>
           </div>
+
+          <button 
+             onClick={handleAddProductClick}
+             className="px-3 py-2 bg-[#F1C40F] text-slate-900 rounded-xl font-black text-[9px] uppercase tracking-tighter shadow-sm active:scale-95 transition-all flex items-center gap-1.5 shrink-0 relative z-10"
+          >
+             <Plus size={14} strokeWidth={4} /> আমার পন্য
+          </button>
        </header>
 
        <div className="relative">
@@ -212,7 +243,7 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
        </div>
 
        <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-          {HAAT_CATEGORIES.map(cat => (
+          {fullCategories.map(cat => (
             <button 
                key={cat.id}
                onClick={() => setActiveCategory(cat.id)}
@@ -261,7 +292,9 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <p className="text-[9px] font-bold text-slate-400 truncate">{p.location}</p>
                      </div>
                      <div className="pt-2 flex items-center justify-between">
-                        <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">{p.sellerName ? p.sellerName.split(' ')[0] : 'বিক্রেতা'}</span>
+                        <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest">
+                          {fullCategories.find(c => c.id === p.category)?.name || 'পণ্য'}
+                        </span>
                         <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
                            <ArrowRight size={10} />
                         </div>
