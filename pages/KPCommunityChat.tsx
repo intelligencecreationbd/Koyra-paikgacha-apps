@@ -17,7 +17,8 @@ import {
   Loader2,
   Users,
   X,
-  User
+  User,
+  PhoneOff
 } from 'lucide-react';
 
 // Firebase Imports
@@ -55,6 +56,11 @@ const KPCommunityChat: React.FC = () => {
   const [view, setView] = useState<'chats' | 'users' | 'requests' | 'friends'>('chats');
   const [loading, setLoading] = useState(true);
   
+  // Jitsi State
+  const [isCalling, setIsCalling] = useState(false);
+  const jitsiContainerRef = useRef<HTMLDivElement>(null);
+  const jitsiApiRef = useRef<any>(null);
+
   // Data States
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [friends, setFriends] = useState<any[]>([]);
@@ -89,6 +95,63 @@ const KPCommunityChat: React.FC = () => {
         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Jitsi Initialization
+  useEffect(() => {
+    if (isCalling && activeChat && currentUser && jitsiContainerRef.current) {
+        const chatId = [currentUser.memberId, activeChat.memberId].sort().join('_');
+        const roomName = `KP_Call_${chatId}`;
+        
+        // @ts-ignore
+        if (window.JitsiMeetExternalAPI) {
+            // @ts-ignore
+            jitsiApiRef.current = new window.JitsiMeetExternalAPI("meet.jit.si", {
+                roomName: roomName,
+                width: '100%',
+                height: '100%',
+                parentNode: jitsiContainerRef.current,
+                userInfo: {
+                    displayName: currentUser.fullName
+                },
+                configOverwrite: {
+                    prejoinPageEnabled: false,
+                    disableDeepLinking: true, // Prevents mobile app prompts
+                    startWithAudioMuted: false,
+                    startWithVideoMuted: true,
+                    mobileAppPromo: false,
+                    enableWelcomePage: false
+                },
+                interfaceConfigOverwrite: {
+                    MOBILE_APP_PROMO: false,
+                    SHOW_JITSI_WATERMARK: false,
+                    SHOW_WATERMARK_FOR_GUESTS: false,
+                    TOOLBAR_BUTTONS: [
+                        'microphone', 'hangup', 'fms', 'closedcaptions', 'settings', 'raisehand',
+                        'videoquality', 'filmstrip', 'tileview', 'help', 'mute-everyone', 'security'
+                    ]
+                }
+            });
+
+            jitsiApiRef.current.addEventListeners({
+                readyToClose: () => handleEndCall()
+            });
+        }
+    }
+    return () => {
+        if (jitsiApiRef.current) {
+            jitsiApiRef.current.dispose();
+            jitsiApiRef.current = null;
+        }
+    };
+  }, [isCalling]);
+
+  const handleEndCall = () => {
+    if (jitsiApiRef.current) {
+        jitsiApiRef.current.dispose();
+        jitsiApiRef.current = null;
+    }
+    setIsCalling(false);
+  };
 
   const fetchUsers = async (myId: string) => {
     try {
@@ -205,13 +268,6 @@ const KPCommunityChat: React.FC = () => {
     setNewMessage('');
   };
 
-  const startVoiceCall = () => {
-    if (!activeChat) return;
-    const chatId = [currentUser.memberId, activeChat.memberId].sort().join('_');
-    const roomName = `KP_Call_${chatId}`;
-    window.open(`https://meet.jit.si/${roomName}#config.startWithVideoMuted=true`, '_blank');
-  };
-
   if (!currentUser && !loading) {
     return (
       <div className="p-10 flex flex-col items-center justify-center h-[80vh] text-center space-y-6">
@@ -223,12 +279,33 @@ const KPCommunityChat: React.FC = () => {
     );
   }
 
+  // Voice Call View (Embedded Iframe)
+  if (isCalling && activeChat) {
+    return (
+        <div className="fixed inset-0 z-[160] bg-slate-950 flex flex-col animate-in fade-in duration-300">
+            <header className="px-5 py-4 flex items-center justify-between border-b border-white/10 bg-slate-900 sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20">
+                        {activeChat.photoURL ? <img src={activeChat.photoURL} className="w-full h-full object-cover" /> : <UserCircle size={40} className="text-white/20" />}
+                    </div>
+                    <div className="text-left">
+                        <h4 className="font-black text-white text-sm truncate leading-tight">{activeChat.fullName}</h4>
+                        <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> কলে আছেন</p>
+                    </div>
+                </div>
+                <button onClick={handleEndCall} className="p-3.5 bg-red-600 text-white rounded-full active:scale-90 transition-all shadow-lg shadow-red-600/20"><PhoneOff size={24} /></button>
+            </header>
+            <div ref={jitsiContainerRef} className="flex-1 bg-slate-900" />
+        </div>
+    );
+  }
+
   if (activeChat) {
     return (
       <div className="fixed inset-0 z-[120] bg-white flex flex-col animate-in slide-in-from-right duration-300">
           <header className="px-5 py-4 flex items-center gap-4 border-b border-slate-50 bg-white sticky top-0 z-10">
               <button onClick={() => setActiveChat(null)} className="p-2 -ml-2 text-slate-400"><ChevronLeft size={24}/></button>
-              <div className="flex-1 flex items-center gap-3 overflow-hidden">
+              <div className="flex-1 flex items-center gap-3 overflow-hidden text-left">
                   <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden shrink-0 border border-slate-200">
                     {activeChat.photoURL ? <img src={activeChat.photoURL} className="w-full h-full object-cover" /> : <UserCircle size={40} className="text-slate-300" />}
                   </div>
@@ -238,13 +315,13 @@ const KPCommunityChat: React.FC = () => {
                   </div>
               </div>
               <div className="flex items-center gap-2">
-                  <button onClick={startVoiceCall} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl active:scale-90 transition-all"><Phone size={20}/></button>
+                  <button onClick={() => setIsCalling(true)} className="p-3 bg-emerald-50 text-emerald-600 rounded-xl active:scale-90 transition-all"><Phone size={20}/></button>
                   <div className="relative">
                     <button onClick={() => setShowOptions(!showOptions)} className="p-3 text-slate-400 rounded-xl active:scale-90 transition-all"><MoreVertical size={20}/></button>
                     {showOptions && (
                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 animate-in fade-in zoom-in duration-200 z-50">
-                            <button onClick={() => unfriend(activeChat.memberId)} className="w-full px-4 py-3 flex items-center gap-3 text-sm font-bold text-slate-600 hover:bg-slate-50"><UserX size={18}/> আনফ্রেন্ড করুন</button>
-                            <button onClick={() => toggleBlock(activeChat.memberId)} className="w-full px-4 py-3 flex items-center gap-3 text-sm font-bold text-red-500 hover:bg-red-50"><Trash2 size={18}/> ব্লক করুন</button>
+                            <button onClick={() => unfriend(activeChat.memberId)} className="w-full px-4 py-3 flex items-center gap-3 text-sm font-bold text-slate-600 hover:bg-slate-50 text-left"><UserX size={18}/> আনফ্রেন্ড করুন</button>
+                            <button onClick={() => toggleBlock(activeChat.memberId)} className="w-full px-4 py-3 flex items-center gap-3 text-sm font-bold text-red-500 hover:bg-red-50 text-left"><Trash2 size={18}/> ব্লক করুন</button>
                         </div>
                     )}
                   </div>
@@ -256,7 +333,7 @@ const KPCommunityChat: React.FC = () => {
                   const isMe = m.senderId === currentUser.memberId;
                   return (
                     <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-1`}>
-                        <div className={`max-w-[80%] p-4 rounded-3xl ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 text-slate-800 rounded-tl-none shadow-sm'}`}>
+                        <div className={`max-w-[80%] p-4 rounded-3xl text-left ${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-slate-100 text-slate-800 rounded-tl-none shadow-sm'}`}>
                             <p className="text-sm font-bold leading-relaxed">{m.text}</p>
                             <p className={`text-[8px] mt-1 font-black uppercase opacity-50 ${isMe ? 'text-white' : 'text-slate-400'}`}>
                                 {toBn(new Date(m.timestamp).toLocaleTimeString('bn-BD', {hour:'2-digit', minute:'2-digit'}))}
@@ -350,11 +427,11 @@ const KPCommunityChat: React.FC = () => {
                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest pl-2">বন্ধুত্বের অনুরোধ ({toBn(requests.length)})</p>
                     {requests.map(r => (
                         <div key={r.id} className="bg-blue-50 p-4 rounded-[32px] border border-blue-100 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 text-left overflow-hidden">
                                 <div className="w-10 h-10 rounded-full bg-white overflow-hidden shrink-0 border border-blue-200">
                                     {r.photo ? <img src={r.photo} className="w-full h-full object-cover" /> : <UserCircle size={24} className="text-blue-200" />}
                                 </div>
-                                <h4 className="font-black text-blue-900 text-sm">{r.name}</h4>
+                                <h4 className="font-black text-blue-900 text-sm truncate">{r.name}</h4>
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => handleRequest(r, 'accept')} className="p-2.5 bg-blue-600 text-white rounded-xl shadow-md"><UserCheck size={18}/></button>
@@ -386,7 +463,7 @@ const KPCommunityChat: React.FC = () => {
                                 onClick={() => startChat(friendData)}
                                 className="w-full bg-white p-5 rounded-[35px] border border-slate-50 shadow-sm flex items-center justify-between group active:scale-[0.98] transition-all"
                             >
-                                <div className="flex items-center gap-4 overflow-hidden">
+                                <div className="flex items-center gap-4 overflow-hidden text-left">
                                     <div className="w-14 h-14 rounded-[22px] bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
                                         {friendData.photoURL ? <img src={friendData.photoURL} className="w-full h-full object-cover" /> : <UserCircle size={28} className="text-slate-300" />}
                                     </div>
