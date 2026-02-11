@@ -111,20 +111,24 @@ const KPCommunityChat: React.FC = () => {
                 height: '100%',
                 parentNode: jitsiContainerRef.current,
                 userInfo: {
-                    displayName: currentUser.fullName
+                    displayName: currentUser.fullName // Auto-set Firebase user name
                 },
                 configOverwrite: {
-                    prejoinPageEnabled: false,
-                    disableDeepLinking: true, // Prevents mobile app prompts
-                    startWithAudioMuted: false,
-                    startWithVideoMuted: true,
+                    prejoinPageEnabled: false, // Bypass pre-join page
+                    prejoinConfig: { enabled: false }, // Explicitly disable prejoin
+                    disableDeepLinking: true, // Prevents mobile app prompt
+                    startWithAudioMuted: false, // Audio On by default
+                    startWithVideoMuted: true, // Video Off by default
                     mobileAppPromo: false,
-                    enableWelcomePage: false
+                    enableWelcomePage: false,
+                    p2p: { enabled: true } // Direct peer-to-peer for privacy
                 },
                 interfaceConfigOverwrite: {
                     MOBILE_APP_PROMO: false,
                     SHOW_JITSI_WATERMARK: false,
                     SHOW_WATERMARK_FOR_GUESTS: false,
+                    SHOW_BRAND_WATERMARK: false,
+                    SHOW_CHROME_EXTENSION_BANNER: false,
                     TOOLBAR_BUTTONS: [
                         'microphone', 'hangup', 'fms', 'closedcaptions', 'settings', 'raisehand',
                         'videoquality', 'filmstrip', 'tileview', 'help', 'mute-everyone', 'security'
