@@ -16,20 +16,15 @@ import {
   Wallet,
   ShieldCheck,
   CheckCircle2,
-  MessageSquare,
-  ShieldAlert,
-  PhoneCall,
   ShoppingBag,
   Plus,
   Trash2,
   Edit2,
-  Camera,
   ShoppingBasket,
-  Store,
-  Tag,
   ChevronDown,
-  Info,
-  X
+  X,
+  Calendar,
+  KeyRound
 } from 'lucide-react';
 import { User as AppUser } from '../types';
 
@@ -44,7 +39,15 @@ import {
   sendPasswordResetEmail,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore as getFs, doc as docFs, setDoc as setDocFs, collection as collectionFs, query as queryFs, where as whereFs, getDocs as getDocsFs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  collection, 
+  query, 
+  where, 
+  getDocs 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
@@ -57,7 +60,7 @@ const firebaseConfig = {
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const dbFs = getFs(app);
+const dbFs = getFirestore(app);
 const db = getDatabase(app);
 const auth = getAuth(app);
 auth.languageCode = 'bn'; 
@@ -83,20 +86,17 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   
   const [loggedInUser, setLoggedInUser] = useState<any | null>(null);
   
-  // My Haat States
   const [userProducts, setUserProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [productForm, setProductForm] = useState({
     name: '', category: '', price: '', unit: 'কেজি', sellerName: '', mobile: '', location: '', description: '', photo: ''
   });
 
-  // Forms
   const [loginData, setLoginData] = useState({ mobile: '', password: '' });
   const [regData, setRegData] = useState({
-    fullName: '', email: '', mobile: '', village: '', password: '', confirmPassword: ''
+    fullName: '', email: '', mobile: '', dob: '', village: '', password: '', confirmPassword: ''
   });
   const [forgotEmail, setForgotEmail] = useState('');
 
@@ -109,23 +109,18 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       if (targetAction === 'haat') setMode('my_haat');
       else setMode('profile');
     }
-  }, [targetAction]);
+  }, [targetAction, onLogin]);
 
-  // Fetch Dynamic Categories for Haat
   useEffect(() => {
     const catRef = ref(db, 'online_haat_categories');
     const unsubscribe = onValue(catRef, snap => {
       const val = snap.val();
       const list = val ? Object.keys(val).map(k => ({ id: k, name: val[k].name })) : [];
       setCategories(list);
-      if (list.length > 0 && !productForm.category) {
-        setProductForm(prev => ({ ...prev, category: list[0].id }));
-      }
     });
     return () => unsubscribe();
   }, []);
 
-  // Fetch User's Products
   useEffect(() => {
     if (loggedInUser && mode === 'my_haat') {
       const haatRef = ref(db, 'online_haat');
@@ -161,8 +156,8 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
     setIsSubmitting(true);
     try {
-      const q = queryFs(collectionFs(dbFs, "users"), whereFs("mobile", "==", cleanMobile));
-      const querySnapshot = await getDocsFs(q);
+      const q = query(collection(dbFs, "users"), where("mobile", "==", cleanMobile));
+      const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
         setErrorMsg('এই মোবাইল নম্বরে কোনো অ্যাকাউন্ট পাওয়া যায়নি।');
@@ -171,21 +166,13 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       }
 
       const userData = querySnapshot.docs[0].data();
-      const userEmail = userData.email;
-
-      if (!userEmail) {
-        setErrorMsg('আপনার অ্যাকাউন্টে কোনো ইমেইল সংযুক্ত নেই।');
-        setIsSubmitting(false);
-        return;
-      }
-
       if (userData.status === 'suspended') {
         setErrorMsg('আপনার একাউন্টটি সাসপেন্ড করা হয়েছে।');
         setIsSubmitting(false);
         return;
       }
 
-      const userCredential = await signInWithEmailAndPassword(auth, userEmail, loginData.password);
+      const userCredential = await signInWithEmailAndPassword(auth, userData.email, loginData.password);
       const finalUser = { ...userData, uid: userCredential.user.uid };
       setLoggedInUser(finalUser);
       localStorage.setItem('kp_logged_in_user', JSON.stringify(finalUser));
@@ -203,15 +190,15 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
-    const { fullName, email, mobile, village, password, confirmPassword } = regData;
+    const { fullName, email, mobile, dob, village, password, confirmPassword } = regData;
     const cleanMobile = convertDigits(mobile);
 
-    if (!fullName || !email || !cleanMobile || !village || !password) {
+    if (!fullName || !email || !cleanMobile || !dob || !village || !password) {
       setErrorMsg('সবগুলো তথ্য পূরণ করা বাধ্যতামূলক।');
       return;
     }
     if (cleanMobile.length !== 11) {
-      setErrorMsg('সঠিক মোবাইল নম্বর দিন।');
+      setErrorMsg('সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন।');
       return;
     }
     if (password !== confirmPassword) {
@@ -221,8 +208,8 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
     setIsSubmitting(true);
     try {
-      const q = queryFs(collectionFs(dbFs, "users"), whereFs("mobile", "==", cleanMobile));
-      const snap = await getDocsFs(q);
+      const q = query(collection(dbFs, "users"), where("mobile", "==", cleanMobile));
+      const snap = await getDocs(q);
       if (!snap.empty) {
         setErrorMsg('এই মোবাইল নম্বরটি ইতিমধ্যে ব্যবহৃত হয়েছে।');
         setIsSubmitting(false);
@@ -237,19 +224,47 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         fullName,
         email,
         mobile: cleanMobile,
+        dob,
         village,
         status: 'active',
         password, 
         createdAt: new Date().toISOString()
       };
-      await setDocFs(docFs(dbFs, "users", userCredential.user.uid), userData);
-      if (auth.currentUser) await sendEmailVerification(auth.currentUser);
+      
+      await setDoc(doc(dbFs, "users", userCredential.user.uid), userData);
+      
+      if (auth.currentUser) {
+        await sendEmailVerification(auth.currentUser);
+      }
+      
       setSuccessMsg('নিবন্ধন সফল! আপনার ইমেইলে ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে।');
       await signOut(auth);
       setTimeout(() => setMode('login'), 5000);
     } catch (err: any) {
-      setErrorMsg('নিবন্ধন করতে সমস্যা হয়েছে।');
+      setErrorMsg(err.message.includes('email-already-in-use') ? 'এই ইমেইলটি ইতিমধ্যে ব্যবহৃত হয়েছে।' : 'নিবন্ধন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
     } finally { setIsSubmitting(false); }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setErrorMsg('আপনার ইমেইল এড্রেস লিখুন।');
+      return;
+    }
+    setIsSubmitting(true);
+    setErrorMsg('');
+    try {
+      await sendPasswordResetEmail(auth, forgotEmail);
+      setSuccessMsg('পাসওয়ার্ড রিসেট লিঙ্ক আপনার ইমেইলে পাঠানো হয়েছে।');
+      setTimeout(() => {
+        setMode('login');
+        setSuccessMsg('');
+      }, 5000);
+    } catch (err: any) {
+      setErrorMsg('ইমেইলটি সঠিক নয় অথবা কোনো সমস্যা হয়েছে।');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -387,33 +402,45 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         </div>
       )}
 
-      {(mode === 'login' || mode === 'register') && (
+      {(mode === 'login' || mode === 'register' || mode === 'forgot') && (
         <>
           <div className="text-center py-4">
-            <h2 className="text-2xl font-black text-[#1A1A1A]">{mode === 'login' ? 'ইউজার লগইন' : 'সদস্য নিবন্ধন'}</h2>
+            <h2 className="text-2xl font-black text-[#1A1A1A]">
+              {mode === 'login' ? 'ইউজার লগইন' : mode === 'register' ? 'সদস্য নিবন্ধন' : 'পাসওয়ার্ড রিসেট'}
+            </h2>
           </div>
+          
           <div className="bg-white p-8 pt-3 rounded-[40px] shadow-2xl border border-blue-50 space-y-6">
-            <div className="flex p-1.5 bg-slate-100 rounded-2xl">
-              <button onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${mode === 'login' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}>লগইন</button>
-              <button onClick={() => { setMode('register'); setErrorMsg(''); setSuccessMsg(''); }} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${mode === 'register' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}>নিবন্ধন</button>
-            </div>
+            {mode !== 'forgot' && (
+              <div className="flex p-1.5 bg-slate-100 rounded-2xl">
+                <button onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${mode === 'login' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}>লগইন</button>
+                <button onClick={() => { setMode('register'); setErrorMsg(''); setSuccessMsg(''); }} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${mode === 'register' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}>নিবন্ধন</button>
+              </div>
+            )}
+
             {mode === 'login' ? (
               <form onSubmit={handleLogin} className="space-y-5">
                 <Field label="মোবাইল নম্বর" value={loginData.mobile} placeholder="০১xxxxxxxxx" onChange={v => setLoginData({...loginData, mobile: v})} maxLength={11} icon={<Smartphone size={18}/>} />
-                <div className="relative">
-                  <Field label="পাসওয়ার্ড" type={showPassword ? 'text' : 'password'} value={loginData.password} placeholder="******" onChange={v => setLoginData({...loginData, password: v})} icon={<Lock size={18}/>} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-10 text-slate-300 p-2">{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Field label="পাসওয়ার্ড" type={showPassword ? 'text' : 'password'} value={loginData.password} placeholder="******" onChange={v => setLoginData({...loginData, password: v})} icon={<Lock size={18}/>} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-10 text-slate-300 p-2">{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button>
+                  </div>
+                  <div className="text-right pr-1">
+                    <button type="button" onClick={() => { setMode('forgot'); setErrorMsg(''); }} className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:underline transition-all">পাসওয়ার্ড ভুলে গেছেন?</button>
+                  </div>
                 </div>
                 <button disabled={isSubmitting} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
                     {isSubmitting ? <Loader2 className="animate-spin" /> : 'প্রবেশ করুন'}
                 </button>
                 {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center px-4 animate-bounce">{errorMsg}</p>}
               </form>
-            ) : (
+            ) : mode === 'register' ? (
               <form onSubmit={handleRegister} className="space-y-4">
                 <Field label="পূর্ণ নাম" value={regData.fullName} placeholder="নাম লিখুন" onChange={v => setRegData({...regData, fullName: v})} icon={<UserIcon size={18}/>} />
                 <Field label="ইমেইল" value={regData.email} type="email" placeholder="example@gmail.com" onChange={v => setRegData({...regData, email: v})} icon={<Mail size={18}/>} />
                 <Field label="মোবাইল" value={regData.mobile} maxLength={11} placeholder="০১xxxxxxxxx" onChange={v => setRegData({...regData, mobile: v})} icon={<Smartphone size={18}/>} />
+                <Field label="জন্ম তারিখ *" value={regData.dob} type="date" onChange={v => setRegData({...regData, dob: v})} icon={<Calendar size={18}/>} />
                 <Field label="গ্রাম" value={regData.village} placeholder="গ্রামের নাম" onChange={v => setRegData({...regData, village: v})} icon={<MapPin size={18}/>} />
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="পাসওয়ার্ড" type="password" value={regData.password} placeholder="******" onChange={v => setRegData({...regData, password: v})} />
@@ -425,6 +452,29 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                 {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center px-4 animate-bounce">{errorMsg}</p>}
                 {successMsg && <p className="text-green-600 text-[11px] font-black text-center px-4">{successMsg}</p>}
               </form>
+            ) : (
+              <div className="space-y-6 animate-in zoom-in duration-300">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center shadow-inner">
+                    <KeyRound size={32} />
+                  </div>
+                  <p className="text-xs font-bold text-slate-400 text-center px-6 leading-relaxed">আপনার একাউন্টের সাথে সংযুক্ত ইমেইলটি নিচে লিখুন। আমরা আপনাকে পাসওয়ার্ড রিসেট করার লিঙ্ক পাঠাবো।</p>
+                </div>
+                
+                <form onSubmit={handleForgotPassword} className="space-y-5">
+                   <Field label="ইমেইল এড্রেস" value={forgotEmail} type="email" placeholder="example@gmail.com" onChange={setForgotEmail} icon={<Mail size={18}/>} />
+                   <button disabled={isSubmitting} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                      {isSubmitting ? <Loader2 className="animate-spin" /> : 'লিঙ্ক পাঠান'}
+                   </button>
+                </form>
+
+                <button onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} className="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                  <ChevronLeft size={16} /> লগইনে ফিরে যান
+                </button>
+
+                {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center px-4 animate-bounce">{errorMsg}</p>}
+                {successMsg && <p className="text-green-600 text-[11px] font-black text-center px-4">{successMsg}</p>}
+              </div>
             )}
           </div>
         </>
