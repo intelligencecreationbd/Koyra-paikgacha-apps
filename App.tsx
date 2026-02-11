@@ -11,6 +11,7 @@ import HotlineDetail from './pages/HotlineDetail';
 import DigitalLedger from './pages/DigitalLedger';
 import OnlineHaat from './pages/OnlineHaat';
 import WeatherPage from './pages/WeatherPage';
+import KPCommunityChat from './pages/KPCommunityChat';
 import DateTimeBox from './components/DateTimeBox';
 import PublicDownload from './components/PublicDownload';
 import { Submission, Notice, User } from './types';
@@ -81,7 +82,7 @@ const BottomNav: React.FC = () => {
     }
     if (pathname === '/services') {
       navigate('/');
-    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth', '/download'].includes(pathname)) {
+    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth', '/download', '/chat'].includes(pathname)) {
       navigate('/services');
     } else if (pathname === '/ledger') {
       navigate('/auth');
@@ -125,7 +126,6 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
   const navigate = useNavigate();
   return (
     <div className={`h-screen w-full relative flex flex-col items-center pt-2 pb-6 px-6 transition-colors duration-500 overflow-hidden ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
-      {/* Dark mode toggle - moved to absolute to save space */}
       <button 
         onClick={() => setIsDarkMode(!isDarkMode)}
         className="absolute top-4 right-6 p-3.5 rounded-[18px] bg-slate-900 dark:bg-slate-800 shadow-2xl text-white transition-all active:scale-90 z-20"
@@ -133,10 +133,7 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
         {isDarkMode ? <Sun size={22} /> : <Moon size={22} />}
       </button>
 
-      {/* Main Content Center */}
       <div className="flex-1 flex flex-col items-center justify-start w-full max-w-sm pt-2">
-         
-         {/* Round Logo Bar - No space above it as per screenshot */}
          <div className="relative mb-3 animate-in zoom-in duration-1000">
             <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-[80px] animate-pulse"></div>
             <div className="relative w-56 h-56 bg-white rounded-full shadow-[0_25px_60px_-12px_rgba(0,0,0,0.2)] flex items-center justify-center border-[10px] border-white overflow-hidden p-2.5">
@@ -151,12 +148,10 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
             </div>
          </div>
 
-         {/* DateTimeBox - Tightly packed below logo */}
          <div className="w-full mb-4 animate-in slide-in-from-top-4 duration-1000">
             <DateTimeBox />
          </div>
 
-         {/* Title and Subtitle */}
          <div className="space-y-4 text-center animate-in fade-in zoom-in duration-1000 delay-200">
             <div className="space-y-2">
               <h1 className="text-5xl font-black tracking-tight text-[#0056b3] dark:text-blue-500 drop-shadow-sm">
@@ -167,7 +162,6 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
               </p>
             </div>
             
-            {/* CTA Button */}
             <button 
               onClick={() => navigate('/services')}
               className="group relative w-full mt-4 py-5 bg-[#0056b3] dark:bg-blue-600 text-white font-black text-xl rounded-[35px] shadow-[0_20px_40px_-10px_rgba(0,86,179,0.4)] overflow-hidden active:scale-95 transition-all flex items-center justify-center gap-4 mx-auto max-w-[260px]"
@@ -177,7 +171,6 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
          </div>
       </div>
 
-      {/* Footer credits - Pins to bottom and visible on same screen */}
       <div className="w-full pb-4 flex flex-col items-center justify-center gap-1 opacity-90 animate-in slide-in-from-bottom-4 duration-1000 delay-500">
           <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Development by</p>
           <p className="text-[12px] font-black tracking-[0.05em] text-[#0056b3] dark:text-blue-400 uppercase">Intelligence Creation BD</p>
@@ -186,7 +179,7 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
   );
 };
 
-const AppContent: React.FC = () => {
+const AppContent = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminPassword, setAdminPassword] = useState('Tayeb');
@@ -202,12 +195,21 @@ const AppContent: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [subtitleIndex, setSubtitleIndex] = useState(0);
+  const subtitles = ["এক ক্লিকে সকল তথ্য", "বিপদে আপনার বন্ধু"];
+
   const longPressTimer = useRef<any>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const isLanding = location.pathname === '/';
 
-  // Fetch admin settings, notices and app logo from database
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSubtitleIndex((prev) => (prev + 1) % subtitles.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const passRef = ref(db, 'admin_settings/password');
     onValue(passRef, (snap) => {
@@ -304,7 +306,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-white text-[#1A1A1A]'}`}>
+    <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-white text-[#1A1A1A]'}`}>
       {!isLanding && (
         <>
           <div className={`fixed inset-0 z-[100] transition-opacity duration-300 ${isDrawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -312,8 +314,11 @@ const AppContent: React.FC = () => {
             <div className={`absolute top-0 left-0 bottom-0 w-80 bg-white dark:bg-slate-950 shadow-2xl transition-transform duration-300 ease-out border-r border-slate-100 dark:border-slate-800 flex flex-col ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
                 <div className="text-left flex flex-col">
-                  <h2 className="font-black text-xl text-[#0056b3] dark:text-blue-400 shimmer-text">কয়রা-পাইকগাছা</h2>
-                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest animate-pulse mt-0.5">ডিজিটাল অ্যাপে স্বাগতম</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <h2 className="font-black text-xl text-[#0056b3] dark:text-blue-400 shimmer-text leading-none">কয়রা-পাইকগাছা</h2>
+                    <span className="text-[10px] font-black whitespace-nowrap animate-rainbow-text">কমিউনিটি এপস</span>
+                  </div>
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest animate-pulse mt-1">ডিজিটাল অ্যাপে স্বাগতম</p>
                 </div>
                 <button 
                   onPointerDown={handleLongPressStart}
@@ -389,10 +394,18 @@ const AppContent: React.FC = () => {
                 </button>
               </div>
               <div className="flex flex-col items-center">
-                <h1 className="font-black text-2xl tracking-tight text-white leading-none drop-shadow-sm">কয়রা-পাইকগাছা</h1>
-                <span className="text-[10px] font-black text-cyan-300 tracking-wider animate-sub-title mt-1.5 uppercase">
-                  এক ক্লিকে সকল তথ্য
-                </span>
+                <div className="flex items-baseline gap-1.5">
+                  <h1 className="font-black text-2xl tracking-tight text-white leading-none drop-shadow-sm">কয়রা-পাইকগাছা</h1>
+                  <span className="text-[10px] font-black whitespace-nowrap animate-rainbow-text">কমিউনিটি এপস</span>
+                </div>
+                <div className="relative h-4 flex items-center justify-center mt-1.5 overflow-hidden w-full">
+                  <span 
+                    key={subtitleIndex}
+                    className="text-[10px] font-black tracking-wider uppercase whitespace-nowrap animate-rainbow-text animate-in fade-in zoom-in duration-500"
+                  >
+                    {subtitles[subtitleIndex]}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center gap-1">
                 <button onClick={() => setIsDarkMode(!isDarkMode)} className="group p-2.5 rounded-xl text-white/70 transition-all duration-300 hover:text-white hover:bg-white/10 active:scale-90">
@@ -429,7 +442,7 @@ const AppContent: React.FC = () => {
         </div>
       )}
 
-      <main className={`max-w-md mx-auto ${isLanding ? 'p-0 m-0 w-full h-screen' : 'min-h-[calc(100vh-64px)] pb-40'}`}>
+      <main className={`max-w-md mx-auto relative ${isLanding ? 'p-0 m-0 w-full h-screen' : 'min-h-[calc(100vh-64px)] pb-40'}`}>
         <Routes>
           <Route path="/" element={<LandingScreen isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} appLogo={appLogo} />} />
           <Route path="/services" element={<Home notices={notices} isAdmin={isAdminLoggedIn} user={currentUser} />} />
@@ -442,6 +455,7 @@ const AppContent: React.FC = () => {
           <Route path="/ledger" element={currentUser ? <DigitalLedger /> : <Navigate to="/auth?to=ledger" />} />
           <Route path="/online-haat" element={<OnlineHaat />} />
           <Route path="/weather" element={<WeatherPage />} />
+          <Route path="/chat" element={<KPCommunityChat />} />
           <Route path="/download" element={
             <PublicDownload 
               appLogo={appLogo} 
@@ -461,12 +475,10 @@ const AppContent: React.FC = () => {
   );
 };
 
-const App: React.FC = () => {
+export const App = () => {
   return (
     <Router>
       <AppContent />
     </Router>
   );
 };
-
-export default App;

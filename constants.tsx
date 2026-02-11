@@ -19,7 +19,8 @@ import {
   HeartPulse,
   Truck,
   Building,
-  UserCheck
+  UserCheck,
+  MessagesSquare
 } from 'lucide-react';
 import { MainMenu } from './types';
 
@@ -49,6 +50,13 @@ export const CATEGORIES: MainMenu[] = [
         ]
       }
     ]
+  },
+  {
+    id: '16',
+    name: 'কেপি চ্যাট',
+    icon: 'MessagesSquare',
+    color: '#0EA5E9',
+    subMenus: []
   },
   {
     id: '10',
@@ -159,5 +167,6 @@ export const ICON_MAP: Record<string, any> = {
   HeartPulse,
   Truck,
   Building,
-  UserCheck
+  UserCheck,
+  MessagesSquare
 };
