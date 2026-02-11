@@ -37,6 +37,7 @@ import AdminLegalMgmt from '../components/AdminLegalMgmt';
 import AdminDirectoryMgmt from '../components/AdminDirectoryMgmt';
 import AdminNewsMgmt from '../components/AdminNewsMgmt';
 import AdminHaatMgmt from '../components/AdminHaatMgmt';
+import AdminUserList from '../components/AdminUserList';
 
 // Firebase Imports
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -64,17 +65,10 @@ interface AdminDashboardProps {
   adminPassword: string;
 }
 
-interface StoredUser extends AppUser {
-  password?: string;
-}
-
 type AdminView = 'menu' | 'users' | 'notices' | 'hotline_mgmt' | 'bus_mgmt' | 'legal_mgmt' | 'directory_mgmt' | 'news_mgmt' | 'haat_mgmt' | 'change_pass' | 'user_submissions';
 
-const toBn = (num: string | number) => 
-    (num || '').toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
-
 const Header: React.FC<{ title: string; onBack: () => void }> = ({ title, onBack }) => (
-  <div className="flex items-center gap-4 mb-6">
+  <div className="flex items-center gap-4 mb-6 text-left">
     <button onClick={onBack} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all">
       <ChevronLeft size={20} className="text-slate-800" />
     </button>
@@ -126,21 +120,8 @@ const EditField: React.FC<{ label: string; value: string; placeholder?: string; 
 export default function AdminDashboard({ submissions, notices, onUpdateNotices, onUpdatePassword, onUpdateSubmissions, adminPassword }: AdminDashboardProps) {
   const navigate = useNavigate();
   const [currentView, setCurrentView] = useState<AdminView>('menu');
-  const [users, setUsers] = useState<StoredUser[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [newNoticeText, setNewNoticeText] = useState('');
   const [newPassInput, setNewPassInput] = useState('');
-
-  useEffect(() => {
-    let unsubs: (() => void)[] = [];
-    if (currentView === 'users') {
-        const usersRef = ref(db, 'users');
-        unsubs.push(onValue(usersRef, (snapshot) => {
-          if (snapshot.exists()) setUsers(Object.values(snapshot.val()));
-        }));
-    }
-    return () => unsubs.forEach(fn => fn());
-  }, [currentView]);
 
   const handleAddNotice = async () => {
     if (!newNoticeText.trim()) return;
@@ -197,28 +178,8 @@ export default function AdminDashboard({ submissions, notices, onUpdateNotices, 
       {currentView === 'haat_mgmt' && <AdminHaatMgmt onBack={() => setCurrentView('menu')} />}
       {currentView === 'bus_mgmt' && <AdminBusMgmt onBack={() => setCurrentView('menu')} />}
       {currentView === 'legal_mgmt' && <AdminLegalMgmt onBack={() => setCurrentView('menu')} />}
+      {currentView === 'users' && <AdminUserList onBack={() => setCurrentView('menu')} />}
       
-      {currentView === 'users' && (
-        <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-          <Header title="ইউজার লিস্ট" onBack={() => setCurrentView('menu')} />
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-            <input className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-[22px] font-bold outline-none" placeholder="নাম বা আইডি দিয়ে খুঁজুন..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-          </div>
-          <div className="space-y-3">
-            {users.filter(u => u.fullName.includes(searchTerm)).map((u, i) => (
-              <div key={u.memberId} className="w-full flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-[26px] text-left">
-                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center font-black">{toBn(i + 1)}</div>
-                <div className="flex-1">
-                    <p className="font-black text-slate-800 leading-tight">{u.fullName}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">ID: {u.memberId} | {u.mobile}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {currentView === 'notices' && (
         <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
           <Header title="নোটিশ" onBack={() => setCurrentView('menu')} />
