@@ -24,7 +24,9 @@ import {
   ChevronDown,
   X,
   Calendar,
-  KeyRound
+  KeyRound,
+  Camera,
+  Store
 } from 'lucide-react';
 import { User as AppUser } from '../types';
 
@@ -75,6 +77,7 @@ interface UserAuthProps {
 const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryParams = new URLSearchParams(location.search);
   const targetAction = queryParams.get('to');
   
@@ -106,8 +109,18 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       const user = JSON.parse(saved);
       setLoggedInUser(user);
       onLogin(user);
-      if (targetAction === 'haat') setMode('my_haat');
-      else setMode('profile');
+      if (targetAction === 'haat') {
+        setMode('my_haat');
+        setShowProductForm(true);
+        setProductForm(prev => ({
+          ...prev,
+          sellerName: user.fullName,
+          mobile: user.mobile,
+          location: user.village
+        }));
+      } else {
+        setMode('profile');
+      }
     }
   }, [targetAction, onLogin]);
 
@@ -177,8 +190,19 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       setLoggedInUser(finalUser);
       localStorage.setItem('kp_logged_in_user', JSON.stringify(finalUser));
       onLogin(finalUser as any);
-      if (targetAction === 'haat') setMode('my_haat');
-      else setMode('profile');
+      
+      if (targetAction === 'haat') {
+        setMode('my_haat');
+        setShowProductForm(true);
+        setProductForm(prev => ({
+          ...prev,
+          sellerName: finalUser.fullName,
+          mobile: finalUser.mobile,
+          location: finalUser.village
+        }));
+      } else {
+        setMode('profile');
+      }
     } catch (err: any) {
       setErrorMsg('ভুল মোবাইল নম্বর অথবা পাসওয়ার্ড।');
     } finally {
@@ -275,10 +299,19 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
     onLogin(null);
   };
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setProductForm(prev => ({ ...prev, photo: reader.result as string }));
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productForm.name || !productForm.price || !productForm.category) {
-        alert('তথ্য পূরণ করুন');
+        alert('পণ্যের নাম, ক্যাটাগরি এবং মূল্য অবশ্যই পূরণ করুন।');
         return;
     }
     setIsSubmitting(true);
@@ -294,6 +327,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         setShowProductForm(false);
         setEditingProductId(null);
         setProductForm({ name: '', category: categories[0]?.id || '', price: '', unit: 'কেজি', sellerName: loggedInUser.fullName, mobile: loggedInUser.mobile, location: loggedInUser.village, description: '', photo: '' });
+        alert('আপনার পন্যের বিজ্ঞাপনটি সফলভাবে প্রকাশিত হয়েছে!');
     } catch (e) { alert('সংরক্ষণ ব্যর্থ হয়েছে!'); }
     finally { setIsSubmitting(false); }
   };
@@ -348,9 +382,14 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
             <button onClick={() => { setEditingProductId(null); setProductForm({ name: '', category: categories[0]?.id || '', price: '', unit: 'কেজি', sellerName: loggedInUser.fullName, mobile: loggedInUser.mobile, location: loggedInUser.village, description: '', photo: '' }); setShowProductForm(true); }} className="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all"><Plus size={24} strokeWidth={3} /></button>
           </header>
           <div className="grid gap-4">
-             {userProducts.length === 0 ? <div className="py-24 text-center opacity-30 flex flex-col items-center gap-4"><ShoppingBasket size={64} className="text-slate-300" /><p className="font-bold text-slate-400">কোনো পণ্য নেই</p></div> : userProducts.map(p => (
+             {userProducts.length === 0 ? (
+               <div className="py-24 text-center opacity-30 flex flex-col items-center gap-4">
+                 <ShoppingBasket size={64} className="text-slate-300" />
+                 <p className="font-bold text-slate-400">আপনার কোনো বিজ্ঞাপন নেই</p>
+               </div>
+             ) : userProducts.map(p => (
                  <div key={p.id} className="bg-white p-4 rounded-[32px] border border-slate-100 flex items-center gap-4 shadow-sm group">
-                    <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center text-slate-300 shrink-0">
+                    <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center text-slate-300 shrink-0 shadow-inner">
                         {p.photo ? <img src={p.photo} className="w-full h-full object-cover" /> : <ShoppingBasket size={24} />}
                     </div>
                     <div className="flex-1 overflow-hidden">
@@ -360,40 +399,92 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                     </div>
                     <div className="flex gap-2">
                         <button onClick={() => { setEditingProductId(p.id); setProductForm(p); setShowProductForm(true); }} className="p-3 bg-blue-50 text-blue-600 rounded-xl active:scale-90 transition-all"><Edit2 size={16}/></button>
-                        <button onClick={() => { if(confirm('মুছতে চান?')) remove(ref(db, `online_haat/${p.id}`)); }} className="p-3 bg-red-50 text-red-500 rounded-xl active:scale-90 transition-all"><Trash2 size={16}/></button>
+                        <button onClick={() => { if(confirm('বিজ্ঞাপনটি মুছতে চান?')) remove(ref(db, `online_haat/${p.id}`)); }} className="p-3 bg-red-50 text-red-500 rounded-xl active:scale-90 transition-all"><Trash2 size={16}/></button>
                     </div>
                  </div>
              ))}
           </div>
 
           {showProductForm && (
-            <div className="fixed inset-0 z-[150] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center">
-                <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-in zoom-in duration-300 text-left">
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-black text-xl text-slate-800">পণ্যের তথ্য</h3>
-                        <button onClick={()=>setShowProductForm(false)} className="p-2 text-slate-400 hover:text-red-500"><X/></button>
+            <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center overflow-hidden">
+                <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-in zoom-in duration-300 text-left relative">
+                    <div className="flex justify-between items-center border-b pb-4 mb-2">
+                        <div className="flex items-center gap-3">
+                           <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><Edit2 size={20}/></div>
+                           <h3 className="font-black text-xl text-slate-800">{editingProductId ? 'পণ্য সংশোধন' : 'নতুন পণ্য যোগ'}</h3>
+                        </div>
+                        <button onClick={()=>setShowProductForm(false)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><X size={24}/></button>
                     </div>
-                    <div className="space-y-4">
+                    
+                    <div className="flex flex-col items-center">
+                        <div className="relative group w-full">
+                            <div className="w-full h-44 rounded-[30px] bg-slate-50 border-2 border-dashed border-slate-200 shadow-inner overflow-hidden flex flex-col items-center justify-center text-slate-300 gap-2">
+                                {productForm.photo ? (
+                                    <img src={productForm.photo} className="w-full h-full object-cover" alt="Product" />
+                                ) : (
+                                    <>
+                                        <Camera size={40} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">পণ্যের ছবি আপলোড করুন</span>
+                                    </>
+                                )}
+                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="absolute bottom-3 right-3 p-3 bg-blue-600 text-white rounded-2xl shadow-xl border-4 border-white active:scale-90 transition-all"
+                            >
+                                <Camera size={18} strokeWidth={3} />
+                            </button>
+                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoUpload} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 pt-2">
                         <div className="text-left">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-2 block">ক্যাটাগরি</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-1.5 block">ক্যাটাগরি নির্বাচন *</label>
                             <div className="relative">
                                 <select 
-                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl appearance-none font-black text-slate-800 focus:ring-2 focus:ring-blue-500 shadow-sm outline-none"
+                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-[22px] appearance-none font-black text-slate-800 focus:ring-2 focus:ring-blue-500 shadow-sm outline-none"
                                     value={productForm.category}
                                     onChange={(e) => setProductForm({...productForm, category: e.target.value})}
                                 >
+                                    <option value="" disabled>ক্যাটাগরি বেছে নিন</option>
                                     {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={20} />
                             </div>
                         </div>
-                        <Field label="পণ্যের নাম" value={productForm.name} onChange={v=>setProductForm({...productForm, name:v})} placeholder="যেমন: দেশি রুই মাছ" />
+
+                        <Field label="পণ্যের নাম *" value={productForm.name} onChange={v=>setProductForm({...productForm, name:v})} placeholder="যেমন: দেশি মুরগী" icon={<ShoppingBasket size={18}/>} />
+                        
                         <div className="grid grid-cols-2 gap-3">
-                            <Field label="মূল্য" value={productForm.price} onChange={v=>setProductForm({...productForm, price:v})} placeholder="৳ ০০" type="number" />
-                            <Field label="একক" value={productForm.unit} onChange={v=>setProductForm({...productForm, unit:v})} placeholder="কেজি / হালি" />
+                            <Field label="মূল্য (৳) *" value={productForm.price} onChange={v=>setProductForm({...productForm, price:v})} placeholder="৳ ০০" type="number" />
+                            <Field label="একক (যেমন: কেজি) *" value={productForm.unit} onChange={v=>setProductForm({...productForm, unit:v})} placeholder="কেজি / হালি" />
                         </div>
-                        <button onClick={handleProductSubmit} disabled={isSubmitting} className="w-full py-5 bg-amber-500 text-white font-black rounded-3xl shadow-lg mt-4 flex items-center justify-center gap-2 active:scale-95 transition-all">
-                            {isSubmitting ? <Loader2 className="animate-spin" /> : 'পাবলিশ করুন'}
+
+                        <div className="p-4 bg-blue-50/50 rounded-[30px] border border-blue-100 space-y-4">
+                           <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] pl-1">বিক্রেতার তথ্য</p>
+                           <Field label="নাম" value={productForm.sellerName} onChange={v=>setProductForm({...productForm, sellerName:v})} placeholder="নাম লিখুন" icon={<Store size={18}/>} readOnly />
+                           <Field label="মোবাইল নম্বর *" value={productForm.mobile} onChange={v=>setProductForm({...productForm, mobile:v})} placeholder="০১xxxxxxxxx" icon={<Smartphone size={18}/>} readOnly />
+                           <Field label="ঠিকানা" value={productForm.location} onChange={v=>setProductForm({...productForm, location:v})} placeholder="যেমন: কয়রা বাজার" icon={<MapPin size={18}/>} readOnly />
+                        </div>
+                        
+                        <div className="text-left">
+                            <label className="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider pl-1">বিস্তারিত বিবরণ</label>
+                            <textarea 
+                                className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[28px] font-bold outline-none text-slate-800 h-24 text-sm focus:ring-2 focus:ring-blue-500 transition-all"
+                                value={productForm.description}
+                                onChange={e => setProductForm({...productForm, description: e.target.value})}
+                                placeholder="পণ্যের গুণাগুণ বা বিশেষত্ব লিখুন..."
+                            />
+                        </div>
+
+                        <button 
+                            onClick={handleProductSubmit} 
+                            disabled={isSubmitting} 
+                            className="w-full py-5 bg-blue-600 text-white font-black rounded-[28px] shadow-2xl mt-4 flex items-center justify-center gap-2 active:scale-95 transition-all shadow-blue-500/20 disabled:opacity-50"
+                        >
+                            {isSubmitting ? <Loader2 className="animate-spin" /> : (editingProductId ? 'তথ্য আপডেট করুন' : 'পণ্য পাবলিশ করুন')}
                         </button>
                     </div>
                 </div>
@@ -483,12 +574,20 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   );
 };
 
-const Field: React.FC<{ label: string; value: string; type?: string; placeholder?: string; maxLength?: number; onChange: (v: string) => void; icon?: React.ReactNode }> = ({ label, value, type = 'text', placeholder, maxLength, onChange, icon }) => (
+const Field: React.FC<{ label: string; value: string; type?: string; placeholder?: string; maxLength?: number; onChange: (v: string) => void; icon?: React.ReactNode; readOnly?: boolean }> = ({ label, value, type = 'text', placeholder, maxLength, onChange, icon, readOnly = false }) => (
   <div className="text-left w-full">
     <label className="text-[10px] font-black text-slate-400 block mb-1.5 uppercase tracking-widest pl-1">{label}</label>
     <div className="relative">
       {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">{icon}</div>}
-      <input type={type} maxLength={maxLength} placeholder={placeholder} className={`w-full ${icon ? 'pl-11' : 'px-5'} py-3.5 rounded-2xl bg-slate-50 border border-slate-200 outline-none font-bold text-slate-800 focus:border-blue-400 transition-all shadow-sm`} value={value} onChange={e => onChange(e.target.value)} />
+      <input 
+        type={type} 
+        maxLength={maxLength} 
+        placeholder={placeholder} 
+        readOnly={readOnly}
+        className={`w-full ${icon ? 'pl-11' : 'px-5'} py-3.5 rounded-2xl ${readOnly ? 'bg-slate-100 text-slate-500' : 'bg-slate-50 text-slate-800'} border border-slate-200 outline-none font-bold focus:border-blue-400 transition-all shadow-sm`} 
+        value={value} 
+        onChange={e => onChange(e.target.value)} 
+      />
     </div>
   </div>
 );

@@ -6,12 +6,13 @@ import PublicWeather from '../components/PublicWeather';
 /**
  * WeatherPage Container
  * Acts as a route entry for the encapsulated PublicWeather component.
+ * Fixed height container to enable internal scrolling.
  */
 const WeatherPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="p-5 pb-40 min-h-screen">
+    <div className="px-5 pt-1 h-[calc(100vh-80px)]">
       <PublicWeather onBack={() => navigate(-1)} />
     </div>
   );
