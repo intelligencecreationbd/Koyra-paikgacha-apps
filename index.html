@@ -3,7 +3,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Koyra-Paikgacha</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://meet.jit.si/external_api.js"></script>
@@ -42,8 +42,10 @@
             -webkit-tap-highlight-color: transparent;
             background-color: #FFFFFF;
             color: #1A1A1A;
-            overflow: hidden; /* Disable global scrolling */
-            overscroll-behavior-y: contain; /* Prevent pull-to-refresh style bounce */
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
         .scrolling-text {
             white-space: nowrap;
