@@ -207,7 +207,7 @@ const App = () => {
       setSubtitleIndex((prev) => (prev + 1) % subtitles.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [subtitles.length]);
 
   useEffect(() => {
     const passRef = ref(db, 'admin_settings/password');
@@ -441,7 +441,7 @@ const App = () => {
         </div>
       )}
 
-      <main className={`max-w-md mx-auto relative ${isLanding ? 'p-0 m-0 w-full h-screen' : 'h-[calc(100vh-64px)]'}`}>
+      <main className={`max-w-md mx-auto relative ${isLanding ? 'p-0 m-0 w-full h-screen' : 'h-[calc(100vh-64px)] overflow-y-auto no-scrollbar'}`}>
         <Routes>
           <Route path="/" element={<LandingScreen isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} appLogo={appLogo} />} />
           <Route path="/services" element={<Home notices={notices} isAdmin={isAdminLoggedIn} user={currentUser} />} />
