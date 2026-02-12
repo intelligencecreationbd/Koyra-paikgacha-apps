@@ -3,7 +3,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Koyra-Paikgacha</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://meet.jit.si/external_api.js"></script>
@@ -18,11 +18,17 @@
                     animation: {
                         'gradient-x': 'gradient-x 3s ease infinite',
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'submit-pulse': 'submit-pulse 2s infinite',
                     },
                     keyframes: {
                         'gradient-x': {
                             '0%, 100%': { 'background-position': '0% 50%' },
                             '50%': { 'background-position': '100% 50%' },
+                        },
+                        'submit-pulse': {
+                            '0%': { 'box-shadow': '0 0 0 0 rgba(16, 185, 129, 0.7)' },
+                            '70%': { 'box-shadow': '0 0 0 12px rgba(16, 185, 129, 0)' },
+                            '100%': { 'box-shadow': '0 0 0 0 rgba(16, 185, 129, 0)' },
                         }
                     }
                 }
@@ -36,6 +42,8 @@
             -webkit-tap-highlight-color: transparent;
             background-color: #FFFFFF;
             color: #1A1A1A;
+            overflow: hidden; /* Disable global scrolling */
+            overscroll-behavior-y: contain; /* Prevent pull-to-refresh style bounce */
         }
         .scrolling-text {
             white-space: nowrap;
@@ -46,6 +54,17 @@
             100% { transform: translateX(-100%); }
         }
         
+        /* Deep Scrollbar Hiding */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+        }
+
         /* Premium Header Logic */
         .header-liquid {
             background: linear-gradient(-45deg, #001F3F, #003366, #010B13, #002D54);
@@ -89,7 +108,7 @@
             -webkit-backdrop-filter: blur(16px) saturate(180%);
         }
 
-        /* Metallic Premium Blue Gradient for Navigation */
+        /* Metallic Premium Blue Gradient */
         .metallic-blue {
             background: linear-gradient(135deg, #0062cc 0%, #007BFF 50%, #0056b3 100%);
             box-shadow: 0 10px 25px rgba(0, 86, 179, 0.45), 
@@ -103,28 +122,6 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .metallic-blue::after {
-            content: '';
-            position: absolute;
-            top: 5%;
-            left: 10%;
-            width: 80%;
-            height: 40%;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.2) 0%, transparent 100%);
-            border-radius: 50% 50% 10% 10%;
-            pointer-events: none;
-        }
-
-        .metallic-blue:active {
-            transform: scale(0.9) translateY(2px);
-            box-shadow: 0 5px 15px rgba(0, 86, 179, 0.3);
-        }
-
-        .glow-active {
-            box-shadow: 0 0 30px rgba(0, 123, 255, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.5);
-        }
-
-        /* Premium 3D Menu Card */
         .premium-card {
             background: #FFFFFF;
             border: 1px solid rgba(227, 242, 253, 0.6);
@@ -133,12 +130,10 @@
             outline: none !important;
         }
         .premium-card:active {
-            transform: scale(1.05) translateY(-2px);
-            box-shadow: 0 20px 40px -12px rgba(0, 86, 179, 0.15);
-            border-color: rgba(0, 123, 255, 0.2);
+            transform: scale(0.95);
+            background: #F8FAFC;
         }
 
-        /* High-End Floating Animation */
         .icon-floating {
             animation: floating 3s ease-in-out infinite;
         }
@@ -148,16 +143,6 @@
             100% { transform: translateY(0px); }
         }
 
-        /* Sub-title Animation: Slide and Fade */
-        .animate-sub-title {
-            animation: slideFade 4s ease-in-out infinite;
-        }
-        @keyframes slideFade {
-            0%, 100% { opacity: 0.6; transform: translateY(2px); }
-            50% { opacity: 1; transform: translateY(0px); }
-        }
-
-        /* Developer Credit Animation */
         .shimmer-text {
             background: linear-gradient(90deg, #0056b3, #00aaff, #0056b3);
             background-size: 200% auto;
@@ -170,33 +155,11 @@
             0% { background-position: 0% center; }
             100% { background-position: 200% center; }
         }
-        .float-small {
-            animation: floatSmall 4s ease-in-out infinite;
-        }
-        @keyframes floatSmall {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
 
-        /* Dynamic Moving Gradient for Buttons */
-        .premium-btn-animate {
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradient-shift 4s ease infinite;
-        }
-        @keyframes gradient-shift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Super Colorful Gradient for Download Button */
         .download-btn-animate {
             background: linear-gradient(-45deg, #FF0080, #7928CA, #0070F3, #23D5AB, #FF8A00, #00FF75);
             background-size: 600% 600%;
             animation: gradient-flow 4s ease infinite;
-            border: none !important;
-            box-shadow: 0 12px 30px rgba(121, 40, 202, 0.5);
         }
         @keyframes gradient-flow {
             0% { background-position: 0% 50%; }
@@ -204,7 +167,6 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* Rainbow Text Animation */
         .animate-rainbow-text {
             background: linear-gradient(to right, #ef4444, #3b82f6, #10b981, #f59e0b, #ef4444);
             background-size: 200% auto;
@@ -217,40 +179,14 @@
             to { background-position: 200% center; }
         }
 
-        /* Red Question Mark Animation */
-        .animate-question {
-            animation: q-scale 0.8s infinite alternate cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            display: inline-block;
-        }
-        @keyframes q-scale {
-            from { transform: scale(1) rotate(-5deg); filter: drop-shadow(0 0 2px red); }
-            to { transform: scale(1.6) rotate(10deg); filter: drop-shadow(0 0 15px red); }
-        }
-
-        /* Live Download Icon Animation */
-        .live-download-icon {
-            animation: live-bounce 1.5s infinite;
-        }
-        @keyframes live-bounce {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-6px) scale(1.2); }
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #F8FAFC;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #0056b3;
-            border-radius: 10px;
-        }
-        
-        /* Font styles for specific inputs */
         .font-inter {
             font-family: 'Inter', sans-serif;
+        }
+
+        /* High Visibility Pulse for Submit Button */
+        .submit-news-glow {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            animation: submit-pulse 2s infinite;
         }
     </style>
 <script type="importmap">

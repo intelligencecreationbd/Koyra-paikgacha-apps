@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Sun, Moon, Lock, ChevronLeft, LogOut, Home as HomeIcon, User as UserIcon, PlusCircle, Menu, X, ArrowRight, Sparkles, NotebookTabs, MessageSquare, UserCircle, Download, ShieldCheck, Zap, Heart, Star, Smartphone, Camera, Gift, Bus, CloudSun, Newspaper, Scale, Phone } from 'lucide-react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Sun, Moon, Lock, ChevronLeft, LogOut, Home as HomeIcon, User as UserIcon, PlusCircle, Menu, X, ArrowRight, Sparkles, NotebookTabs, MessageSquare, UserCircle, Download, ShieldCheck, Zap, Heart, Star, Smartphone, Camera, Gift, Bus, CloudSun, Newspaper, Scale, Phone, HeartPulse, Calculator } from 'lucide-react';
 import Home from './pages/Home';
 import CategoryView from './pages/CategoryView';
 import InfoSubmit from './pages/InfoSubmit';
@@ -12,6 +12,8 @@ import DigitalLedger from './pages/DigitalLedger';
 import OnlineHaat from './pages/OnlineHaat';
 import WeatherPage from './pages/WeatherPage';
 import KPCommunityChat from './pages/KPCommunityChat';
+import PublicMedical from './components/PublicMedical';
+import AgeCalculator from './components/AgeCalculator';
 import DateTimeBox from './components/DateTimeBox';
 import PublicDownload from './components/PublicDownload';
 import { Submission, Notice, User } from './types';
@@ -82,13 +84,10 @@ const BottomNav: React.FC = () => {
     }
     if (pathname === '/services') {
       navigate('/');
-    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth', '/download', '/chat'].includes(pathname)) {
+    } else if (['/hotline', '/online-haat', '/weather', '/info-submit', '/auth', '/download', '/chat', '/medical', '/age-calculator'].includes(pathname)) {
       navigate('/services');
     } else if (pathname === '/ledger') {
       navigate('/auth');
-    } else if (pathname === '/') {
-      const confirmExit = window.confirm("আপনি কি অ্যাপটি বন্ধ করতে চান?");
-      if (confirmExit) { }
     } else {
       navigate('/services');
     }
@@ -97,7 +96,7 @@ const BottomNav: React.FC = () => {
   if (isAtLanding) return null;
 
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-[80] flex justify-center items-end gap-5 pointer-events-none px-6">
+    <div className="fixed bottom-2 left-0 right-0 z-[80] flex justify-center items-end gap-5 pointer-events-none px-6 pb-2">
       <button 
         onClick={() => navigate('/info-submit')}
         className={`w-12 h-12 rounded-full metallic-blue pointer-events-auto transition-all duration-300 ${isSubmit ? 'glow-active scale-110' : 'opacity-90'}`}
@@ -107,9 +106,9 @@ const BottomNav: React.FC = () => {
 
       <button 
         onClick={handleGlobalBack}
-        className={`w-14 h-14 rounded-full metallic-blue pointer-events-auto -translate-y-1.5 transition-all duration-300 shadow-xl`}
+        className={`w-14 h-14 rounded-full metallic-blue pointer-events-auto -translate-y-1 transition-all duration-300 shadow-xl flex items-center justify-center`}
       >
-        <ChevronLeft size={28} strokeWidth={3} className="text-white" />
+        <span className="text-white font-black text-[12px] uppercase tracking-tighter">Back</span>
       </button>
 
       <button 
@@ -179,7 +178,7 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
   );
 };
 
-const AppContent = () => {
+const App = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminPassword, setAdminPassword] = useState('Tayeb');
@@ -442,7 +441,7 @@ const AppContent = () => {
         </div>
       )}
 
-      <main className={`max-w-md mx-auto relative ${isLanding ? 'p-0 m-0 w-full h-screen' : 'min-h-[calc(100vh-64px)] pb-40'}`}>
+      <main className={`max-w-md mx-auto relative ${isLanding ? 'p-0 m-0 w-full h-screen' : 'h-[calc(100vh-64px)]'}`}>
         <Routes>
           <Route path="/" element={<LandingScreen isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} appLogo={appLogo} />} />
           <Route path="/services" element={<Home notices={notices} isAdmin={isAdminLoggedIn} user={currentUser} />} />
@@ -456,6 +455,8 @@ const AppContent = () => {
           <Route path="/online-haat" element={<OnlineHaat />} />
           <Route path="/weather" element={<WeatherPage />} />
           <Route path="/chat" element={<KPCommunityChat />} />
+          <Route path="/medical" element={<PublicMedical onBack={() => navigate('/services')} />} />
+          <Route path="/age-calculator" element={<AgeCalculator onBack={() => navigate('/services')} />} />
           <Route path="/download" element={
             <PublicDownload 
               appLogo={appLogo} 
@@ -473,12 +474,6 @@ const AppContent = () => {
       {!isLanding && <BottomNav />}
     </div>
   );
-};
+}
 
-export const App = () => {
-  return (
-    <Router>
-      <AppContent />
-    </Router>
-  );
-};
+export default App;
