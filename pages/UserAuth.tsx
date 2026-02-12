@@ -26,7 +26,8 @@ import {
   Calendar,
   KeyRound,
   Camera,
-  Store
+  Store,
+  Tag
 } from 'lucide-react';
 import { User as AppUser } from '../types';
 
@@ -94,7 +95,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [productForm, setProductForm] = useState({
-    name: '', category: '', price: '', unit: 'কেজি', sellerName: '', mobile: '', location: '', description: '', photo: ''
+    name: '', category: '', price: '', offerPrice: '', condition: 'new', unit: 'কেজি', sellerName: '', mobile: '', location: '', description: '', photo: ''
   });
 
   const [loginData, setLoginData] = useState({ mobile: '', password: '' });
@@ -326,7 +327,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         await set(ref(db, `online_haat/${id}`), finalData);
         setShowProductForm(false);
         setEditingProductId(null);
-        setProductForm({ name: '', category: categories[0]?.id || '', price: '', unit: 'কেজি', sellerName: loggedInUser.fullName, mobile: loggedInUser.mobile, location: loggedInUser.village, description: '', photo: '' });
+        setProductForm({ name: '', category: categories[0]?.id || '', price: '', offerPrice: '', condition: 'new', unit: 'কেজি', sellerName: loggedInUser.fullName, mobile: loggedInUser.mobile, location: loggedInUser.village, description: '', photo: '' });
         alert('আপনার পন্যের বিজ্ঞাপনটি সফলভাবে প্রকাশিত হয়েছে!');
     } catch (e) { alert('সংরক্ষণ ব্যর্থ হয়েছে!'); }
     finally { setIsSubmitting(false); }
@@ -379,7 +380,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                 <h2 className="text-xl font-black text-slate-800 leading-tight">আমার পন্য</h2>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate">অনলাইন হাট বিজ্ঞাপন তালিকা</p>
             </div>
-            <button onClick={() => { setEditingProductId(null); setProductForm({ name: '', category: categories[0]?.id || '', price: '', unit: 'কেজি', sellerName: loggedInUser.fullName, mobile: loggedInUser.mobile, location: loggedInUser.village, description: '', photo: '' }); setShowProductForm(true); }} className="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all"><Plus size={24} strokeWidth={3} /></button>
+            <button onClick={() => { setEditingProductId(null); setProductForm({ name: '', category: categories[0]?.id || '', price: '', offerPrice: '', condition: 'new', unit: 'কেজি', sellerName: loggedInUser.fullName, mobile: loggedInUser.mobile, location: loggedInUser.village, description: '', photo: '' }); setShowProductForm(true); }} className="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all"><Plus size={24} strokeWidth={3} /></button>
           </header>
           <div className="grid gap-4">
              {userProducts.length === 0 ? (
@@ -395,7 +396,9 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                     <div className="flex-1 overflow-hidden">
                         <h4 className="font-black text-slate-800 truncate text-sm">{p.name}</h4>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{categories.find(c => c.id === p.category)?.name || 'পণ্য'}</p>
-                        <p className="text-[10px] font-black text-orange-600 mt-1">৳ {toBn(p.price)} / {p.unit}</p>
+                        <p className="text-[10px] font-black text-orange-600 mt-1">
+                          {p.offerPrice ? `৳ ${toBn(p.offerPrice)} (৳ ${toBn(p.price)})` : `৳ ${toBn(p.price)}`} / {p.unit}
+                        </p>
                     </div>
                     <div className="flex gap-2">
                         <button onClick={() => { setEditingProductId(p.id); setProductForm(p); setShowProductForm(true); }} className="p-3 bg-blue-50 text-blue-600 rounded-xl active:scale-90 transition-all"><Edit2 size={16}/></button>
@@ -455,12 +458,34 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                             </div>
                         </div>
 
+                        {/* Product Condition Selection */}
+                        <div className="text-left">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-1.5 block">পণ্যের কন্ডিশন *</label>
+                            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
+                                <button 
+                                  type="button"
+                                  onClick={() => setProductForm({...productForm, condition: 'new'})}
+                                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${productForm.condition === 'new' ? 'bg-white shadow-md text-emerald-600' : 'text-slate-400'}`}
+                                >
+                                  নতুন
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={() => setProductForm({...productForm, condition: 'used'})}
+                                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${productForm.condition === 'used' ? 'bg-white shadow-md text-orange-600' : 'text-slate-400'}`}
+                                >
+                                  পুরাতন
+                                </button>
+                            </div>
+                        </div>
+
                         <Field label="পণ্যের নাম *" value={productForm.name} onChange={v=>setProductForm({...productForm, name:v})} placeholder="যেমন: দেশি মুরগী" icon={<ShoppingBasket size={18}/>} />
                         
                         <div className="grid grid-cols-2 gap-3">
                             <Field label="মূল্য (৳) *" value={productForm.price} onChange={v=>setProductForm({...productForm, price:v})} placeholder="৳ ০০" type="number" />
-                            <Field label="একক (যেমন: কেজি) *" value={productForm.unit} onChange={v=>setProductForm({...productForm, unit:v})} placeholder="কেজি / হালি" />
+                            <Field label="অফার মূল্য (৳)" value={productForm.offerPrice} onChange={v=>setProductForm({...productForm, offerPrice:v})} placeholder="৳ ০০" type="number" />
                         </div>
+                        <Field label="একক (যেমন: কেজি) *" value={productForm.unit} onChange={v=>setProductForm({...productForm, unit:v})} placeholder="কেজি / হালি" icon={<Tag size={16}/>} />
 
                         <div className="p-4 bg-blue-50/50 rounded-[30px] border border-blue-100 space-y-4">
                            <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] pl-1">বিক্রেতার তথ্য</p>
