@@ -20,7 +20,8 @@ import {
   Eye,
   EyeOff,
   Mail,
-  Calendar
+  Calendar,
+  CheckCircle2
 } from 'lucide-react';
 
 // Firebase Imports
@@ -54,6 +55,7 @@ interface StoredUser {
   photoURL?: string;
   email?: string;
   password?: string;
+  isVerified?: boolean;
 }
 
 const Header: React.FC<{ title: string; onBack: () => void }> = ({ title, onBack }) => (
@@ -110,6 +112,17 @@ const AdminUserList: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         alert(`ইউজার সফলভাবে ${newStatus === 'suspended' ? 'সাসপেন্ড' : 'সক্রিয়'} করা হয়েছে।`);
     } catch (e) {
         alert('স্ট্যাটাস আপডেট করা সম্ভব হয়নি!');
+    }
+  };
+
+  const handleToggleVerification = async (uid: string, currentVerified: boolean) => {
+    try {
+      const userRef = doc(dbFs, 'users', uid);
+      await updateDoc(userRef, { isVerified: !currentVerified });
+      if (selectedUser) setSelectedUser({ ...selectedUser, isVerified: !currentVerified });
+      alert(`ইউজার ভেরিফিকেশন স্ট্যাটাস আপডেট হয়েছে।`);
+    } catch (e) {
+      alert('ভেরিফিকেশন আপডেট করতে সমস্যা হয়েছে!');
     }
   };
 
@@ -180,11 +193,18 @@ const AdminUserList: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <div className="w-8 h-8 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center font-black text-[10px] shrink-0 border border-slate-100">
                         {toBn(i + 1)}
                     </div>
-                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center text-slate-300 shrink-0 shadow-sm">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center text-slate-300 shrink-0 shadow-sm relative">
                         {u.photoURL ? <img src={u.photoURL} className="w-full h-full object-cover" alt="" /> : <UserIcon size={24} />}
                     </div>
                     <div className="flex-1 overflow-hidden">
-                        <h4 className="font-black text-slate-800 truncate leading-tight">{u.fullName}</h4>
+                        <div className="flex items-center gap-1.5 overflow-hidden">
+                          <h4 className="font-black text-slate-800 truncate leading-tight">{u.fullName}</h4>
+                          {u.isVerified && (
+                            <div className="bg-white rounded-full flex items-center justify-center shrink-0">
+                               <CheckCircle2 size={14} fill="#1877F2" className="text-white" />
+                            </div>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[10px] font-black text-slate-700 font-inter">{u.mobile}</span>
                             {u.status === 'suspended' && <span className="px-1.5 py-0.5 bg-red-100 text-red-600 text-[8px] font-black rounded uppercase">সাসপেন্ড</span>}
@@ -225,7 +245,14 @@ const AdminUserList: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     </div>
                     {!isEditing ? (
                         <div className="text-center">
-                            <h4 className="text-2xl font-black text-slate-800 leading-tight">{selectedUser.fullName}</h4>
+                            <div className="flex items-center justify-center gap-2">
+                              <h4 className="text-2xl font-black text-slate-800 leading-tight">{selectedUser.fullName}</h4>
+                              {selectedUser.isVerified && (
+                                <div className="bg-white rounded-full flex items-center justify-center border border-slate-50">
+                                   <CheckCircle2 size={18} fill="#1877F2" className="text-white" />
+                                </div>
+                              )}
+                            </div>
                             <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest flex items-center justify-center gap-1">
                                 <MapPin size={10}/> {selectedUser.village}
                             </p>
@@ -299,6 +326,13 @@ const AdminUserList: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         </div>
                     ) : (
                         <>
+                            <button 
+                                onClick={() => handleToggleVerification(selectedUser.uid, !!selectedUser.isVerified)}
+                                className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm mb-1 ${selectedUser.isVerified ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}
+                            >
+                                <CheckCircle2 size={18} fill={selectedUser.isVerified ? "#1877F2" : "none"} className={selectedUser.isVerified ? "text-white" : ""} />
+                                {selectedUser.isVerified ? 'এডমিন ভেরিফাইড (বাতিল করুন)' : 'এডমিন ভেরিফাইড করুন'}
+                            </button>
                             <button 
                                 onClick={() => handleUpdateStatus(selectedUser.uid, selectedUser.status || 'active')}
                                 className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-sm ${selectedUser.status === 'suspended' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'}`}

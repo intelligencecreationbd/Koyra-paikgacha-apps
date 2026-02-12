@@ -95,7 +95,7 @@ const PublicTransport: React.FC<{
           </button>
           <div className="overflow-hidden">
             <h2 className="text-xl font-black text-slate-800 leading-tight truncate">
-              {!subId ? 'যাতায়াত' : !busId ? subId : currentBus?.busName}
+              {!subId ? 'বাস' : !busId ? subId : currentBus?.busName}
             </h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
               {!subId ? 'রুটের তালিকা নির্বাচন করুন' : !busId ? 'বাস সার্ভিসের তালিকা' : 'কাউন্টার ও যোগাযোগ'}

@@ -25,6 +25,7 @@ import { useNavigate } from 'react-router-dom';
 // Firebase Imports
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
@@ -38,6 +39,7 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(app);
+const dbFs = getFirestore(app);
 
 const toBn = (num: string | number) => 
   (num || '').toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
@@ -75,6 +77,7 @@ interface Product {
   description?: string; 
   timestamp: string; 
   userId?: string;
+  isVerified?: boolean; // Temporary field for display
 }
 
 const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
@@ -88,6 +91,7 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [filterSeller, setFilterSeller] = useState<{id: string, name: string} | null>(null);
   const [showTerms, setShowTerms] = useState(false);
   const [globalTerms, setGlobalTerms] = useState('');
+  const [allUsers, setAllUsers] = useState<any[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -100,12 +104,19 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     // Listen for categories
     onValue(ref(db, 'online_haat_categories'), snap => {
       const val = snap.val();
-      setCategories(val ? Object.keys(val).map(k => ({ ...val[k], id: k })) : []);
+      setCategories(val ? Object.keys(val).map(k => ({ id: k, name: val[k].name })) : []);
     });
     // Listen for global terms
     onValue(ref(db, 'online_haat_settings/terms'), snap => {
       setGlobalTerms(snap.val() || 'এখনও কোনো শর্তাবলী যোগ করা হয়নি।');
     });
+
+    // Fetch all users to match verification status
+    const fetchUsers = async () => {
+        const snap = await getDocs(collection(dbFs, "users"));
+        setAllUsers(snap.docs.map(doc => doc.data()));
+    };
+    fetchUsers();
   }, []);
 
   const filteredProducts = useMemo(() => {
@@ -121,6 +132,11 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       (p.sellerName || '').toLowerCase().includes(term)
     );
   }, [products, activeCategory, searchTerm, filterSeller]);
+
+  const getProductWithVerified = (p: Product) => {
+    const user = allUsers.find(u => u.memberId === p.userId);
+    return { ...p, isVerified: user?.isVerified || false };
+  };
 
   const handleAddProductClick = () => {
     const savedUser = localStorage.getItem('kp_logged_in_user');
@@ -205,223 +221,94 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                </div>
                                <div className="overflow-hidden">
                                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">বিক্রেতা (সব পণ্য দেখতে ক্লিক করুন)</p>
-                                  <p className="font-black text-slate-800 text-base truncate">{selectedProduct.sellerName}</p>
+                                  <div className="flex items-center gap-1.5 overflow-hidden">
+                                    <p className="font-black text-slate-800 text-base truncate">{selectedProduct.sellerName}</p>
+                                    {getProductWithVerified(selectedProduct).isVerified && (
+                                       <CheckCircle2 size={16} fill="#1877F2" className="text-white shrink-0" />
+                                    )}
+                                  </div>
                                </div>
                             </div>
                             <ChevronRight size={18} className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
                         </button>
-
                         <div className="bg-slate-50/70 p-4 rounded-[28px] border border-slate-100 flex items-center gap-4 shadow-sm">
-                            <div className="p-3 bg-white rounded-2xl shadow-sm text-emerald-500 shrink-0">
-                               <MapPin size={20} />
-                            </div>
-                            <div className="text-left overflow-hidden">
-                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">অবস্থান / এলাকা</p>
-                               <p className="font-black text-slate-800 text-base truncate">{selectedProduct.location}</p>
-                            </div>
-                        </div>
-                     </div>
-
-                     {selectedProduct.description && (
-                        <div className="space-y-3 text-left bg-blue-50/20 p-5 rounded-[30px] border border-blue-100/50">
-                           <div className="flex items-center gap-2 text-blue-600">
-                              <Info size={16} />
-                              <h4 className="font-black text-[10px] uppercase tracking-widest">পণ্যের বিস্তারিত তথ্য</h4>
+                           <div className="p-3 bg-white rounded-2xl shadow-sm text-emerald-500 shrink-0">
+                              <MapPin size={20} />
                            </div>
-                           <p className="text-sm font-medium text-slate-600 leading-relaxed whitespace-pre-wrap">
-                              {selectedProduct.description}
-                           </p>
+                           <div className="text-left overflow-hidden">
+                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">ঠিকানা</p>
+                              <p className="font-black text-slate-700 truncate">{selectedProduct.location}</p>
+                           </div>
                         </div>
-                     )}
-
-                     <div className="flex flex-col gap-4 pt-2">
-                        {/* Terms link line */}
-                        <button 
-                          onClick={() => setShowTerms(true)}
-                          className="flex items-center justify-center gap-2 text-blue-600 hover:text-blue-700 transition-colors py-1 group"
-                        >
-                          <FileText size={14} className="group-hover:scale-110 transition-transform" />
-                          <span className="text-[11px] font-black uppercase tracking-widest border-b border-blue-600/30">অনলাইন হাটের শর্তাবলী</span>
-                        </button>
-
-                        <div className="grid grid-cols-2 gap-3">
-                           <a 
-                              href={`tel:${convertBnToEn(selectedProduct.mobile)}`} 
-                              className="py-4 bg-[#0056b3] text-white font-black rounded-[24px] shadow-xl shadow-blue-500/10 flex items-center justify-center gap-3 active:scale-95 transition-all"
-                           >
-                              <PhoneCall size={18} /> কল করুন
-                           </a>
-                           <a 
-                              href={`https://wa.me/${formatWhatsAppNumber(selectedProduct.mobile)}`} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="py-4 bg-[#25D366] text-white font-black rounded-[24px] shadow-xl shadow-emerald-500/10 flex items-center justify-center gap-3 active:scale-95 transition-all"
-                           >
-                              <WhatsAppIcon size={22} /> WhatsApp
-                           </a>
+                        {selectedProduct.description && (
+                          <div className="bg-slate-50/70 p-5 rounded-[32px] border border-slate-100 shadow-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                               <FileText size={14} className="text-slate-400" />
+                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">পণ্যের বিস্তারিত</p>
+                            </div>
+                            <p className="text-sm font-bold text-slate-600 leading-relaxed text-justify whitespace-pre-line">{selectedProduct.description}</p>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                           <a href={`tel:${convertBnToEn(selectedProduct.mobile)}`} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"><PhoneCall size={18} /> কল দিন</a>
+                           <a href={`https://wa.me/${formatWhatsAppNumber(selectedProduct.mobile)}`} target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-[#25D366] text-white rounded-2xl font-black flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"><WhatsAppIcon size={18} /> হোয়াটসঅ্যাপ</a>
                         </div>
-                        <button 
-                           onClick={() => setSelectedProduct(null)} 
-                           className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-600 transition-all flex items-center justify-center gap-2"
-                        >
-                           <ArrowLeft size={12} className="rotate-180" /> তালিকায় ফিরে যান
-                        </button>
                      </div>
                   </div>
                </div>
             </div>
           ) : (
-            <>
-              <div className="space-y-4 px-1">
-                <div className="relative">
-                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                   <input 
-                      className="w-full pl-12 pr-5 py-4 bg-white border border-slate-100 rounded-[25px] font-bold outline-none shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50 transition-all text-sm" 
-                      placeholder="পণ্য বা বিক্রেতার নাম খুঁজুন..." 
-                      value={searchTerm} 
-                      onChange={e => setSearchTerm(e.target.value)} 
-                   />
+            <div className="px-1 space-y-6">
+                <div className="relative group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={18} />
+                  <input 
+                    className="w-full pl-12 pr-5 py-4 bg-white border border-slate-100 rounded-[22px] font-bold outline-none shadow-sm focus:border-blue-400 transition-all" 
+                    placeholder="পণ্যের নাম দিয়ে খুঁজুন..." 
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
                 </div>
-
-                {filterSeller && (
-                  <div className="flex animate-in slide-in-from-left-2 duration-300">
-                    <div className="bg-[#0056b3] text-white pl-4 pr-2 py-2 rounded-full flex items-center gap-2 shadow-lg shadow-blue-500/30 border border-white/20">
-                      <Store size={14} />
-                      <span className="text-[9px] font-black uppercase tracking-widest">{filterSeller.name} এর পণ্য</span>
-                      <button 
-                        onClick={() => setFilterSeller(null)}
-                        className="p-1.5 bg-white/20 rounded-full hover:bg-white/40 transition-colors"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                   <button 
-                      onClick={() => setActiveCategory('all')} 
-                      className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[11px] transition-all border uppercase tracking-wider ${activeCategory === 'all' ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100'}`}
-                   >
-                    সব পণ্য
-                   </button>
+                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                   <button onClick={() => setActiveCategory('all')} className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-xs transition-all border ${activeCategory === 'all' ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg' : 'bg-white text-slate-400 border-slate-100'}`}>সব পণ্য</button>
                    {categories.map(cat => (
-                      <button 
-                        key={cat.id} 
-                        onClick={() => setActiveCategory(cat.id)} 
-                        className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-[11px] transition-all border uppercase tracking-wider ${activeCategory === cat.id ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100'}`}
-                      >
-                        {cat.name}
-                      </button>
+                     <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-xs transition-all border ${activeCategory === cat.id ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg' : 'bg-white text-slate-400 border-slate-100'}`}>{cat.name}</button>
                    ))}
                 </div>
-              </div>
-
-              {loading ? (
-                <div className="py-24 flex flex-col items-center justify-center gap-4 opacity-30">
-                  <RefreshCw size={40} className="animate-spin text-blue-600" />
-                  <p className="font-black text-[10px] uppercase tracking-widest">পণ্য লোড হচ্ছে...</p>
-                </div>
-              ) : filteredProducts.length === 0 ? (
-                <div className="py-32 text-center opacity-30 flex flex-col items-center gap-5 px-10">
-                  <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 border border-slate-100">
-                    <ShoppingBasket size={44} />
-                  </div>
-                  <p className="font-black text-slate-800 text-sm">এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4 px-1 animate-in fade-in duration-700">
-                   {filteredProducts.map((p, idx) => (
-                      <button 
-                        key={p.id} 
-                        onClick={() => setSelectedProduct(p)} 
-                        className="flex flex-col bg-white rounded-[35px] border border-slate-50 shadow-sm overflow-hidden text-left group active:scale-[0.98] transition-all animate-in slide-in-from-bottom-2"
-                        style={{ animationDelay: `${idx * 50}ms` }}
-                      >
-                         <div className="w-full h-40 bg-slate-50 relative overflow-hidden">
-                            {p.photo ? (
-                              <img src={p.photo} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={p.name} />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-200">
-                                <ShoppingBasket size={32} />
-                              </div>
-                            )}
-                            <div className="absolute top-2 right-2 flex flex-col gap-1.5 items-end">
-                              <div className="p-2 bg-white/80 backdrop-blur-md rounded-xl shadow-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <ExternalLink size={14} />
-                              </div>
-                              <span className={`px-2 py-0.5 rounded-lg text-[7px] font-black uppercase text-white shadow-sm border border-white/20 ${p.condition === 'new' ? 'bg-emerald-500' : 'bg-orange-500'}`}>
-                                {p.condition === 'new' ? 'নতুন' : 'পুরাতন'}
-                              </span>
-                            </div>
-                         </div>
-                         <div className="p-4 space-y-1.5 flex-1 flex flex-col justify-between">
-                            <div className="overflow-hidden">
-                               <h4 className="font-black text-slate-800 text-[13px] truncate leading-tight group-hover:text-blue-600 transition-colors">{p.name}</h4>
-                               <div className="flex items-center gap-1 mt-1 opacity-60">
-                                  <Store size={10} />
-                                  <p className="text-[9px] font-bold text-slate-500 truncate uppercase">{p.sellerName}</p>
-                               </div>
-                            </div>
-                            <div className="flex items-center justify-between pt-1 border-t border-slate-50 mt-1">
-                               <div className="flex flex-col">
-                                  {p.offerPrice ? (
-                                    <>
-                                      <p className="text-[12px] font-black text-emerald-600">৳ {toBn(p.offerPrice)}</p>
-                                      <p className="text-[8px] font-bold text-slate-400 line-through">৳ {toBn(p.price)}</p>
-                                    </>
-                                  ) : (
-                                    <p className="text-[12px] font-black text-orange-600">৳ {toBn(p.price)}</p>
-                                  )}
-                                </div>
-                               <div className="w-6 h-6 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                  <ArrowRight size={12} />
-                               </div>
-                            </div>
-                         </div>
-                      </button>
+                <div className="grid grid-cols-2 gap-4">
+                   {filteredProducts.map((p) => (
+                     <button key={p.id} onClick={() => setSelectedProduct(p)} className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden flex flex-col group active:scale-95 transition-all text-left">
+                        <div className="aspect-square relative overflow-hidden bg-slate-50">
+                           {p.photo ? (
+                             <img src={p.photo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} />
+                           ) : (
+                             <div className="w-full h-full flex items-center justify-center text-slate-200">
+                               <ShoppingBasket size={48} />
+                             </div>
+                           )}
+                           <div className="absolute top-2 left-2 px-2.5 py-0.5 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-blue-600 uppercase tracking-widest shadow-sm">
+                             {categories.find(c => c.id === p.category)?.name || 'পণ্য'}
+                           </div>
+                        </div>
+                        <div className="p-4 space-y-1.5">
+                           <h4 className="font-black text-slate-800 text-sm truncate">{p.name}</h4>
+                           <div className="flex items-center gap-1.5">
+                              <p className="font-black text-blue-600 text-xs truncate">৳ {toBn(p.offerPrice || p.price)}</p>
+                              {p.offerPrice && <p className="text-[8px] font-bold text-slate-400 line-through opacity-60">৳ {toBn(p.price)}</p>}
+                           </div>
+                           <div className="flex items-center gap-1 opacity-50 overflow-hidden">
+                              <MapPin size={8} />
+                              <p className="text-[8px] font-bold truncate uppercase">{p.location}</p>
+                           </div>
+                        </div>
+                     </button>
                    ))}
                 </div>
-              )}
-            </>
+            </div>
           )}
        </div>
-
-       {/* Global Terms Modal */}
-       {showTerms && (
-         <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center overflow-hidden">
-             <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl space-y-6 max-h-[85vh] overflow-y-auto animate-in zoom-in duration-300 text-left relative">
-                 <div className="flex justify-between items-center border-b pb-4">
-                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-blue-50 text-blue-600 rounded-2xl"><FileText size={22}/></div>
-                        <h3 className="font-black text-xl text-slate-800">হাটের শর্তাবলী</h3>
-                     </div>
-                     <button onClick={()=>setShowTerms(false)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><X size={24}/></button>
-                 </div>
-                 
-                 <div className="space-y-4">
-                    <p className="text-sm font-bold text-slate-600 leading-relaxed whitespace-pre-wrap">
-                        {globalTerms}
-                    </p>
-                 </div>
-
-                 <button 
-                    onClick={() => setShowTerms(false)}
-                    className="w-full py-4 bg-slate-900 text-white font-black rounded-3xl active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl"
-                 >
-                    <CheckCircle2 size={18} /> আমি সম্মত
-                 </button>
-             </div>
-         </div>
-       )}
     </div>
   );
 };
 
-const ArrowLeft = ({ size, className }: { size: number, className?: string }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="m15 18-6-6 6-6"/>
-    </svg>
-);
-
+// Fix: Added missing default export
 export default PublicHaat;
