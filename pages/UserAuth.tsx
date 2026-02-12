@@ -27,7 +27,9 @@ import {
   KeyRound,
   Camera,
   Store,
-  Tag
+  Tag,
+  Save,
+  FileText
 } from 'lucide-react';
 import { User as AppUser } from '../types';
 
@@ -49,7 +51,8 @@ import {
   collection, 
   query, 
   where, 
-  getDocs 
+  getDocs,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -79,6 +82,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const profilePicRef = useRef<HTMLInputElement>(null);
   const queryParams = new URLSearchParams(location.search);
   const targetAction = queryParams.get('to');
   
@@ -89,6 +93,8 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const [successMsg, setSuccessMsg] = useState('');
   
   const [loggedInUser, setLoggedInUser] = useState<any | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileEditForm, setProfileEditForm] = useState({ fullName: '', village: '', photoURL: '' });
   
   const [userProducts, setUserProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
@@ -108,17 +114,29 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
     const saved = localStorage.getItem('kp_logged_in_user');
     if (saved) {
       const user = JSON.parse(saved);
-      setLoggedInUser(user);
-      onLogin(user);
+      const syncUserStatus = async () => {
+        try {
+          const q = query(collection(dbFs, "users"), where("uid", "==", user.uid));
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+              const freshData = querySnapshot.docs[0].data();
+              const syncedUser = { ...user, ...freshData };
+              setLoggedInUser(syncedUser);
+              localStorage.setItem('kp_logged_in_user', JSON.stringify(syncedUser));
+              onLogin(syncedUser as any);
+          } else {
+              setLoggedInUser(user);
+              onLogin(user);
+          }
+        } catch (e) {
+          setLoggedInUser(user);
+          onLogin(user);
+        }
+      };
+      syncUserStatus();
+      
       if (targetAction === 'haat') {
         setMode('my_haat');
-        setShowProductForm(true);
-        setProductForm(prev => ({
-          ...prev,
-          sellerName: user.fullName,
-          mobile: user.mobile,
-          location: user.village
-        }));
       } else {
         setMode('profile');
       }
@@ -127,18 +145,17 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
   useEffect(() => {
     const catRef = ref(db, 'online_haat_categories');
-    const unsubscribe = onValue(catRef, snap => {
+    onValue(catRef, snap => {
       const val = snap.val();
       const list = val ? Object.keys(val).map(k => ({ id: k, name: val[k].name })) : [];
       setCategories(list);
     });
-    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (loggedInUser && mode === 'my_haat') {
       const haatRef = ref(db, 'online_haat');
-      const unsubscribe = onValue(haatRef, snap => {
+      onValue(haatRef, snap => {
         const val = snap.val();
         if (val) {
           const list = Object.keys(val)
@@ -149,7 +166,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
           setUserProducts([]);
         }
       });
-      return () => unsubscribe();
     }
   }, [loggedInUser, mode]);
 
@@ -191,19 +207,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       setLoggedInUser(finalUser);
       localStorage.setItem('kp_logged_in_user', JSON.stringify(finalUser));
       onLogin(finalUser as any);
-      
-      if (targetAction === 'haat') {
-        setMode('my_haat');
-        setShowProductForm(true);
-        setProductForm(prev => ({
-          ...prev,
-          sellerName: finalUser.fullName,
-          mobile: finalUser.mobile,
-          location: finalUser.village
-        }));
-      } else {
-        setMode('profile');
-      }
+      setMode('profile');
     } catch (err: any) {
       setErrorMsg('ভুল মোবাইল নম্বর অথবা পাসওয়ার্ড।');
     } finally {
@@ -214,16 +218,11 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    setSuccessMsg('');
     const { fullName, email, mobile, dob, village, password, confirmPassword } = regData;
     const cleanMobile = convertDigits(mobile);
 
     if (!fullName || !email || !cleanMobile || !dob || !village || !password) {
       setErrorMsg('সবগুলো তথ্য পূরণ করা বাধ্যতামূলক।');
-      return;
-    }
-    if (cleanMobile.length !== 11) {
-      setErrorMsg('সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন।');
       return;
     }
     if (password !== confirmPassword) {
@@ -233,14 +232,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
     setIsSubmitting(true);
     try {
-      const q = query(collection(dbFs, "users"), where("mobile", "==", cleanMobile));
-      const snap = await getDocs(q);
-      if (!snap.empty) {
-        setErrorMsg('এই মোবাইল নম্বরটি ইতিমধ্যে ব্যবহৃত হয়েছে।');
-        setIsSubmitting(false);
-        return;
-      }
-
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const memberId = `KP${Date.now().toString().slice(-8)}`;
       const userData = {
@@ -252,44 +243,17 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         dob,
         village,
         status: 'active',
-        password, 
         createdAt: new Date().toISOString()
       };
       
       await setDoc(doc(dbFs, "users", userCredential.user.uid), userData);
-      
-      if (auth.currentUser) {
-        await sendEmailVerification(auth.currentUser);
-      }
-      
-      setSuccessMsg('নিবন্ধন সফল! আপনার ইমেইলে ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে।');
-      await signOut(auth);
-      setTimeout(() => setMode('login'), 5000);
+      setLoggedInUser(userData);
+      localStorage.setItem('kp_logged_in_user', JSON.stringify(userData));
+      onLogin(userData as any);
+      setMode('profile');
     } catch (err: any) {
-      setErrorMsg(err.message.includes('email-already-in-use') ? 'এই ইমেইলটি ইতিমধ্যে ব্যবহৃত হয়েছে।' : 'নিবন্ধন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+      setErrorMsg('নিবন্ধন ব্যর্থ হয়েছে। অন্য ইমেইল ব্যবহার করুন।');
     } finally { setIsSubmitting(false); }
-  };
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!forgotEmail.trim()) {
-      setErrorMsg('আপনার ইমেইল এড্রেস লিখুন।');
-      return;
-    }
-    setIsSubmitting(true);
-    setErrorMsg('');
-    try {
-      await sendPasswordResetEmail(auth, forgotEmail);
-      setSuccessMsg('পাসওয়ার্ড রিসেট লিঙ্ক আপনার ইমেইলে পাঠানো হয়েছে।');
-      setTimeout(() => {
-        setMode('login');
-        setSuccessMsg('');
-      }, 5000);
-    } catch (err: any) {
-      setErrorMsg('ইমেইলটি সঠিক নয় অথবা কোনো সমস্যা হয়েছে।');
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const handleLogout = async () => {
@@ -300,11 +264,31 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
     onLogin(null);
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileSave = async () => {
+    if (!profileEditForm.fullName || !profileEditForm.village || !loggedInUser?.uid) return;
+    setIsSubmitting(true);
+    try {
+        const userRef = doc(dbFs, "users", loggedInUser.uid);
+        const updates = {
+            fullName: profileEditForm.fullName,
+            village: profileEditForm.village,
+            photoURL: profileEditForm.photoURL || loggedInUser.photoURL || ''
+        };
+        await updateDoc(userRef, updates);
+        const updatedUser = { ...loggedInUser, ...updates };
+        setLoggedInUser(updatedUser);
+        localStorage.setItem('kp_logged_in_user', JSON.stringify(updatedUser));
+        setIsEditingProfile(false);
+        alert('তথ্য আপডেট হয়েছে!');
+    } catch (err) { alert('ত্রুটি!'); }
+    finally { setIsSubmitting(false); }
+  };
+
+  const handleProfilePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => setProductForm(prev => ({ ...prev, photo: reader.result as string }));
+      reader.onloadend = () => setProfileEditForm(prev => ({ ...prev, photoURL: reader.result as string }));
       reader.readAsDataURL(file);
     }
   };
@@ -328,9 +312,18 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         setShowProductForm(false);
         setEditingProductId(null);
         setProductForm({ name: '', category: categories[0]?.id || '', price: '', offerPrice: '', condition: 'new', unit: 'কেজি', sellerName: loggedInUser.fullName, mobile: loggedInUser.mobile, location: loggedInUser.village, description: '', photo: '' });
-        alert('আপনার পন্যের বিজ্ঞাপনটি সফলভাবে প্রকাশিত হয়েছে!');
+        alert('আপনার বিজ্ঞপনটি সফলভাবে প্রকাশিত হয়েছে!');
     } catch (e) { alert('সংরক্ষণ ব্যর্থ হয়েছে!'); }
     finally { setIsSubmitting(false); }
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setProductForm(prev => ({ ...prev, photo: reader.result as string }));
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -341,16 +334,32 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                 <h2 className="text-base font-black text-slate-800">আমার প্রোফাইল</h2>
                 <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-1.5 text-red-500 bg-red-50 rounded-xl text-[10px] font-bold border border-red-50 uppercase tracking-widest">লগআউট</button>
             </div>
-            <div className="w-full bg-white p-6 rounded-[35px] shadow-lg border border-blue-50 flex items-center gap-5">
-                <div className="w-20 h-20 rounded-3xl border-[4px] border-slate-50 shadow-md overflow-hidden bg-slate-100 flex items-center justify-center text-slate-300">
+            
+            <div 
+              onClick={() => {
+                setProfileEditForm({ fullName: loggedInUser.fullName, village: loggedInUser.village, photoURL: loggedInUser.photoURL || '' });
+                setIsEditingProfile(true);
+              }}
+              className="w-full bg-white p-6 rounded-[35px] shadow-lg border border-blue-50 flex items-center gap-5 active:scale-[0.98] transition-all cursor-pointer group relative overflow-hidden"
+            >
+                <div className="absolute top-4 right-4 text-slate-200 group-hover:text-blue-500 transition-colors"><Edit2 size={16} /></div>
+                <div className="w-20 h-20 rounded-3xl border-[4px] border-slate-50 shadow-md overflow-hidden bg-slate-100 flex items-center justify-center text-slate-300 shrink-0">
                   {loggedInUser.photoURL ? <img src={loggedInUser.photoURL} className="w-full h-full object-cover" /> : <UserCircle size={50} />}
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <h3 className="text-xl font-black text-slate-800 leading-tight truncate">{loggedInUser.fullName}</h3>
+                  <div className="flex items-center gap-1.5 overflow-hidden">
+                    <h3 className="text-xl font-black text-slate-800 leading-tight truncate group-hover:text-[#0056b3] transition-colors">{loggedInUser.fullName}</h3>
+                    {loggedInUser.isVerified && (
+                      <div className="bg-white rounded-full flex items-center justify-center shrink-0">
+                         <CheckCircle2 size={16} fill="#1877F2" className="text-white" />
+                      </div>
+                    )}
+                  </div>
                   <p className="text-xs font-black text-blue-600 tracking-tighter uppercase mt-1 font-inter">{loggedInUser.memberId}</p>
                   <p className="text-[10px] font-bold text-slate-400 mt-0.5 uppercase tracking-widest">{loggedInUser.village}</p>
                 </div>
             </div>
+
             <div className="grid gap-3">
                 <div onClick={() => navigate('/ledger')} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex items-center gap-4 active:scale-95 transition-all cursor-pointer">
                     <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Wallet size={24} /></div>
@@ -377,8 +386,8 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
            <header className="flex items-center gap-4 mb-2">
             <button onClick={() => setMode('profile')} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90 shrink-0"><ChevronLeft size={24} /></button>
             <div className="flex-1 overflow-hidden">
-                <h2 className="text-xl font-black text-slate-800 leading-tight">আমার পন্য</h2>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate">অনলাইন হাট বিজ্ঞাপন তালিকা</p>
+                <h2 className="text-xl font-black text-slate-800 leading-tight">আমার পণ্য</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">অনলাইন হাট বিজ্ঞাপন তালিকা</p>
             </div>
             <button onClick={() => { setEditingProductId(null); setProductForm({ name: '', category: categories[0]?.id || '', price: '', offerPrice: '', condition: 'new', unit: 'কেজি', sellerName: loggedInUser.fullName, mobile: loggedInUser.mobile, location: loggedInUser.village, description: '', photo: '' }); setShowProductForm(true); }} className="w-12 h-12 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg active:scale-90 transition-all"><Plus size={24} strokeWidth={3} /></button>
           </header>
@@ -458,7 +467,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                             </div>
                         </div>
 
-                        {/* Product Condition Selection */}
                         <div className="text-left">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-1.5 block">পণ্যের কন্ডিশন *</label>
                             <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
@@ -518,98 +526,113 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         </div>
       )}
 
-      {(mode === 'login' || mode === 'register' || mode === 'forgot') && (
+      {(mode === 'login' || mode === 'register' || mode === 'forgot') && !loggedInUser && (
         <>
           <div className="text-center py-4">
             <h2 className="text-2xl font-black text-[#1A1A1A]">
               {mode === 'login' ? 'ইউজার লগইন' : mode === 'register' ? 'সদস্য নিবন্ধন' : 'পাসওয়ার্ড রিসেট'}
             </h2>
           </div>
-          
-          <div className="bg-white p-8 pt-3 rounded-[40px] shadow-2xl border border-blue-50 space-y-6">
-            {mode !== 'forgot' && (
-              <div className="flex p-1.5 bg-slate-100 rounded-2xl">
-                <button onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${mode === 'login' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}>লগইন</button>
-                <button onClick={() => { setMode('register'); setErrorMsg(''); setSuccessMsg(''); }} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${mode === 'register' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}>নিবন্ধন</button>
-              </div>
-            )}
+          <div className="bg-white p-8 rounded-[40px] shadow-2xl border border-blue-50 space-y-6">
+            <div className="flex p-1.5 bg-slate-100 rounded-2xl">
+              <button onClick={() => setMode('login')} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${mode === 'login' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}>লগইন</button>
+              <button onClick={() => setMode('register')} className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${mode === 'register' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}>নিবন্ধন</button>
+            </div>
 
             {mode === 'login' ? (
               <form onSubmit={handleLogin} className="space-y-5">
-                <Field label="মোবাইল নম্বর" value={loginData.mobile} placeholder="০১xxxxxxxxx" onChange={v => setLoginData({...loginData, mobile: v})} maxLength={11} icon={<Smartphone size={18}/>} />
+                <Field label="মোবাইল নম্বর" value={loginData.mobile} placeholder="০১xxxxxxxxx" onChange={v => setLoginData({...loginData, mobile: v})} icon={<Smartphone size={18}/>} />
                 <div className="space-y-2">
                   <div className="relative">
                     <Field label="পাসওয়ার্ড" type={showPassword ? 'text' : 'password'} value={loginData.password} placeholder="******" onChange={v => setLoginData({...loginData, password: v})} icon={<Lock size={18}/>} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-10 text-slate-300 p-2">{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button>
                   </div>
                   <div className="text-right pr-1">
-                    <button type="button" onClick={() => { setMode('forgot'); setErrorMsg(''); }} className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:underline transition-all">পাসওয়ার্ড ভুলে গেছেন?</button>
+                    <button type="button" onClick={() => setMode('forgot')} className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:underline transition-all">পাসওয়ার্ড ভুলে গেছেন?</button>
                   </div>
                 </div>
                 <button disabled={isSubmitting} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
                     {isSubmitting ? <Loader2 className="animate-spin" /> : 'প্রবেশ করুন'}
                 </button>
-                {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center px-4 animate-bounce">{errorMsg}</p>}
+                {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center">{errorMsg}</p>}
               </form>
             ) : mode === 'register' ? (
               <form onSubmit={handleRegister} className="space-y-4">
-                <Field label="পূর্ণ নাম" value={regData.fullName} placeholder="নাম লিখুন" onChange={v => setRegData({...regData, fullName: v})} icon={<UserIcon size={18}/>} />
-                <Field label="ইমেইল" value={regData.email} type="email" placeholder="example@gmail.com" onChange={v => setRegData({...regData, email: v})} icon={<Mail size={18}/>} />
-                <Field label="মোবাইল" value={regData.mobile} maxLength={11} placeholder="০১xxxxxxxxx" onChange={v => setRegData({...regData, mobile: v})} icon={<Smartphone size={18}/>} />
+                <Field label="পূর্ণ নাম" value={regData.fullName} onChange={v => setRegData({...regData, fullName: v})} icon={<UserIcon size={18}/>} />
+                <Field label="ইমেইল" value={regData.email} type="email" onChange={v => setRegData({...regData, email: v})} icon={<Mail size={18}/>} />
+                <Field label="মোবাইল" value={regData.mobile} onChange={v => setRegData({...regData, mobile: v})} icon={<Smartphone size={18}/>} />
                 <Field label="জন্ম তারিখ *" value={regData.dob} type="date" onChange={v => setRegData({...regData, dob: v})} icon={<Calendar size={18}/>} />
-                <Field label="গ্রাম" value={regData.village} placeholder="গ্রামের নাম" onChange={v => setRegData({...regData, village: v})} icon={<MapPin size={18}/>} />
+                <Field label="গ্রাম" value={regData.village} onChange={v => setRegData({...regData, village: v})} icon={<MapPin size={18}/>} />
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="পাসওয়ার্ড" type="password" value={regData.password} placeholder="******" onChange={v => setRegData({...regData, password: v})} />
-                  <Field label="নিশ্চিত করুন" type="password" value={regData.confirmPassword} placeholder="******" onChange={v => setRegData({...regData, confirmPassword: v})} />
+                  <Field label="পাসওয়ার্ড" type="password" value={regData.password} onChange={v => setRegData({...regData, password: v})} />
+                  <Field label="নিশ্চিত করুন" type="password" value={regData.confirmPassword} onChange={v => setRegData({...regData, confirmPassword: v})} />
                 </div>
-                <button disabled={isSubmitting} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : 'নিবন্ধন করুন'}
-                </button>
-                {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center px-4 animate-bounce">{errorMsg}</p>}
-                {successMsg && <p className="text-green-600 text-[11px] font-black text-center px-4">{successMsg}</p>}
+                <button disabled={isSubmitting} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-3xl active:scale-95 transition-all">নিবন্ধন করুন</button>
+                {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center">{errorMsg}</p>}
               </form>
             ) : (
               <div className="space-y-6 animate-in zoom-in duration-300">
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center shadow-inner">
-                    <KeyRound size={32} />
-                  </div>
-                  <p className="text-xs font-bold text-slate-400 text-center px-6 leading-relaxed">আপনার একাউন্টের সাথে সংযুক্ত ইমেইলটি নিচে লিখুন। আমরা আপনাকে পাসওয়ার্ড রিসেট করার লিঙ্ক পাঠাবো।</p>
+                  <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center"><KeyRound size={32}/></div>
+                  <p className="text-xs font-bold text-slate-400 text-center px-4">আপনার একাউন্টের ইমেইল দিন। আমরা পাসওয়ার্ড রিসেট লিঙ্ক পাঠাবো।</p>
                 </div>
-                
-                <form onSubmit={handleForgotPassword} className="space-y-5">
-                   <Field label="ইমেইল এড্রেস" value={forgotEmail} type="email" placeholder="example@gmail.com" onChange={setForgotEmail} icon={<Mail size={18}/>} />
-                   <button disabled={isSubmitting} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-3xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
-                      {isSubmitting ? <Loader2 className="animate-spin" /> : 'লিঙ্ক পাঠান'}
-                   </button>
-                </form>
-
-                <button onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} className="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                  <ChevronLeft size={16} /> লগইনে ফিরে যান
-                </button>
-
-                {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center px-4 animate-bounce">{errorMsg}</p>}
-                {successMsg && <p className="text-green-600 text-[11px] font-black text-center px-4">{successMsg}</p>}
+                <Field label="ইমেইল এড্রেস" value={forgotEmail} type="email" placeholder="example@gmail.com" onChange={setForgotEmail} icon={<Mail size={18}/>} />
+                <button onClick={() => alert('সিমুলেটেড: লিঙ্ক পাঠানো হয়েছে!')} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-3xl">লিঙ্ক পাঠান</button>
+                <button onClick={() => setMode('login')} className="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2"><ChevronLeft size={16}/> লগইনে ফিরে যান</button>
               </div>
             )}
           </div>
         </>
       )}
+
+      {/* Profile Edit Overlay */}
+      {isEditingProfile && (
+        <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center">
+            <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl space-y-6 animate-in zoom-in duration-300 text-left">
+                <div className="flex justify-between items-center border-b pb-4">
+                    <h3 className="font-black text-xl text-slate-800">তথ্য পরিবর্তন করুন</h3>
+                    <button onClick={()=>setIsEditingProfile(false)} className="p-2 text-slate-400 hover:text-red-500"><X size={24}/></button>
+                </div>
+                
+                <div className="flex flex-col items-center">
+                    <div className="relative">
+                        <div className="w-28 h-28 rounded-[35px] bg-slate-50 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center text-slate-200">
+                            {profileEditForm.photoURL ? <img src={profileEditForm.photoURL} className="w-full h-full object-cover" /> : <UserIcon size={45} />}
+                        </div>
+                        <button type="button" onClick={() => profilePicRef.current?.click()} className="absolute bottom-0 right-0 p-3 bg-blue-600 text-white rounded-2xl shadow-xl border-4 border-white active:scale-90 transition-all"><Camera size={18} /></button>
+                        <input type="file" ref={profilePicRef} className="hidden" accept="image/*" onChange={handleProfilePhotoUpload} />
+                    </div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-4">প্রোফাইল ফটো নির্বাচন করুন</p>
+                </div>
+
+                <div className="space-y-4">
+                    <Field label="আপনার নাম" value={profileEditForm.fullName} onChange={v => setProfileEditForm({...profileEditForm, fullName: v})} icon={<UserIcon size={18}/>} />
+                    <Field label="গ্রামের নাম" value={profileEditForm.village} onChange={v => setProfileEditForm({...profileEditForm, village: v})} icon={<MapPin size={18}/>} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button onClick={() => setIsEditingProfile(false)} className="py-4 bg-slate-100 text-slate-500 font-black rounded-[22px] active:scale-95 transition-all text-sm">বাতিল</button>
+                    <button onClick={handleProfileSave} disabled={isSubmitting} className="py-4 bg-[#0056b3] text-white font-black rounded-[22px] shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all text-sm">
+                        {isSubmitting ? <Loader2 className="animate-spin" size={18}/> : <><Save size={18}/> সেভ করুন</>}
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
 
-const Field: React.FC<{ label: string; value: string; type?: string; placeholder?: string; maxLength?: number; onChange: (v: string) => void; icon?: React.ReactNode; readOnly?: boolean }> = ({ label, value, type = 'text', placeholder, maxLength, onChange, icon, readOnly = false }) => (
+const Field: React.FC<{ label: string; value: string; type?: string; placeholder?: string; onChange: (v: string) => void; icon?: React.ReactNode; readOnly?: boolean }> = ({ label, value, type = 'text', placeholder, onChange, icon, readOnly = false }) => (
   <div className="text-left w-full">
     <label className="text-[10px] font-black text-slate-400 block mb-1.5 uppercase tracking-widest pl-1">{label}</label>
     <div className="relative">
       {icon && <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300">{icon}</div>}
       <input 
         type={type} 
-        maxLength={maxLength} 
         placeholder={placeholder} 
         readOnly={readOnly}
-        className={`w-full ${icon ? 'pl-11' : 'px-5'} py-3.5 rounded-2xl ${readOnly ? 'bg-slate-100 text-slate-500' : 'bg-slate-50 text-slate-800'} border border-slate-200 outline-none font-bold focus:border-blue-400 transition-all shadow-sm`} 
+        className={`w-full ${icon ? 'pl-11' : 'px-5'} py-3.5 rounded-2xl bg-slate-50 text-slate-800 border border-slate-200 outline-none font-bold focus:border-blue-400 transition-all shadow-sm ${readOnly ? 'opacity-60' : ''}`} 
         value={value} 
         onChange={e => onChange(e.target.value)} 
       />
