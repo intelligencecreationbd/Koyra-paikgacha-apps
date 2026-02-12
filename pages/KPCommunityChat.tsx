@@ -99,20 +99,22 @@ const KPCommunityChat: React.FC = () => {
   // Jitsi Initialization
   useEffect(() => {
     if (isCalling && activeChat && currentUser && jitsiContainerRef.current) {
-        // Generating a complex unique room ID to avoid collisions and moderator issues
+        // Generating a secure unique room ID with specific prefix
         const ids = [currentUser.memberId, activeChat.memberId].sort();
-        const roomName = `KP_SecureCall_${ids[0]}_v_${ids[1]}_Room`;
+        const roomName = `KP_Private_Call_${ids[0]}_TO_${ids[1]}_Secure`;
         
         // @ts-ignore
         if (window.JitsiMeetExternalAPI) {
             // @ts-ignore
-            jitsiApiRef.current = new window.JitsiMeetExternalAPI("meet.jit.si", {
+            jitsiApiRef.current = new window.JitsiMeetExternalAPI("meet.ffmuc.net", {
                 roomName: roomName,
                 width: '100%',
                 height: '100%',
                 parentNode: jitsiContainerRef.current,
                 userInfo: {
-                    displayName: currentUser.fullName
+                    displayName: currentUser.fullName,
+                    email: currentUser.email || '',
+                    avatarUrl: currentUser.photoURL || ''
                 },
                 configOverwrite: {
                     prejoinPageEnabled: false, 
@@ -121,17 +123,21 @@ const KPCommunityChat: React.FC = () => {
                     startWithAudioMuted: false, 
                     startWithVideoMuted: true,
                     enableWelcomePage: false,
-                    enableLobby: false, // Explicitly disable lobby to avoid moderator requirement
-                    requireDisplayName: false, // Direct entry
+                    enableLobby: false,
+                    requireDisplayName: false,
                     enableNoAudioDetection: true,
+                    disableModeratorIndicator: true, // Hide moderator badge
                     defaultLanguage: 'bn',
                     p2p: { enabled: true },
-                    // These flags help bypass some moderator restrictions on public instances
                     doNotStoreRoom: true,
                     remoteVideoMenu: {
                         disableKick: true
                     },
-                    disableRemoteMute: true
+                    disableRemoteMute: true,
+                    // Prevention of any app download prompts
+                    mobileAppPromo: false,
+                    hideConferenceSubject: true,
+                    hideConferenceTimer: false
                 },
                 interfaceConfigOverwrite: {
                     MOBILE_APP_PROMO: false,
@@ -148,7 +154,8 @@ const KPCommunityChat: React.FC = () => {
             });
 
             jitsiApiRef.current.addEventListeners({
-                readyToClose: () => handleEndCall()
+                readyToClose: () => handleEndCall(),
+                videoConferenceLeft: () => handleEndCall()
             });
         }
     }
@@ -300,7 +307,7 @@ const KPCommunityChat: React.FC = () => {
         <div className="fixed inset-0 z-[160] bg-slate-950 flex flex-col animate-in fade-in duration-300">
             <header className="px-5 py-4 flex items-center justify-between border-b border-white/10 bg-slate-900 sticky top-0 z-10">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20">
+                    <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20 bg-slate-800">
                         {activeChat.photoURL ? <img src={activeChat.photoURL} className="w-full h-full object-cover" /> : <UserCircle size={40} className="text-white/20" />}
                     </div>
                     <div className="text-left">
