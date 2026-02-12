@@ -99,8 +99,9 @@ const KPCommunityChat: React.FC = () => {
   // Jitsi Initialization
   useEffect(() => {
     if (isCalling && activeChat && currentUser && jitsiContainerRef.current) {
-        const chatId = [currentUser.memberId, activeChat.memberId].sort().join('_');
-        const roomName = `KP_Call_${chatId}`;
+        // Generating a complex unique room ID to avoid collisions and moderator issues
+        const ids = [currentUser.memberId, activeChat.memberId].sort();
+        const roomName = `KP_SecureCall_${ids[0]}_v_${ids[1]}_Room`;
         
         // @ts-ignore
         if (window.JitsiMeetExternalAPI) {
@@ -111,17 +112,26 @@ const KPCommunityChat: React.FC = () => {
                 height: '100%',
                 parentNode: jitsiContainerRef.current,
                 userInfo: {
-                    displayName: currentUser.fullName // Auto-set Firebase user name
+                    displayName: currentUser.fullName
                 },
                 configOverwrite: {
-                    prejoinPageEnabled: false, // Bypass pre-join page
-                    prejoinConfig: { enabled: false }, // Explicitly disable prejoin
-                    disableDeepLinking: true, // Prevents mobile app prompt
-                    startWithAudioMuted: false, // Audio On by default
-                    startWithVideoMuted: true, // Video Off by default
-                    mobileAppPromo: false,
+                    prejoinPageEnabled: false, 
+                    prejoinConfig: { enabled: false },
+                    disableDeepLinking: true, 
+                    startWithAudioMuted: false, 
+                    startWithVideoMuted: true,
                     enableWelcomePage: false,
-                    p2p: { enabled: true } // Direct peer-to-peer for privacy
+                    enableLobby: false, // Explicitly disable lobby to avoid moderator requirement
+                    requireDisplayName: false, // Direct entry
+                    enableNoAudioDetection: true,
+                    defaultLanguage: 'bn',
+                    p2p: { enabled: true },
+                    // These flags help bypass some moderator restrictions on public instances
+                    doNotStoreRoom: true,
+                    remoteVideoMenu: {
+                        disableKick: true
+                    },
+                    disableRemoteMute: true
                 },
                 interfaceConfigOverwrite: {
                     MOBILE_APP_PROMO: false,
@@ -129,6 +139,7 @@ const KPCommunityChat: React.FC = () => {
                     SHOW_WATERMARK_FOR_GUESTS: false,
                     SHOW_BRAND_WATERMARK: false,
                     SHOW_CHROME_EXTENSION_BANNER: false,
+                    DEFAULT_REMOTE_DISPLAY_NAME: 'কমিউনিটি মেম্বার',
                     TOOLBAR_BUTTONS: [
                         'microphone', 'hangup', 'fms', 'closedcaptions', 'settings', 'raisehand',
                         'videoquality', 'filmstrip', 'tileview', 'help', 'mute-everyone', 'security'
