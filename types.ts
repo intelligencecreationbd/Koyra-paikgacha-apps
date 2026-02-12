@@ -83,6 +83,7 @@ export interface Notice {
 }
 
 export interface User {
+  uid: string;
   memberId: string;
   fullName: string;
   mobile: string;
@@ -91,6 +92,7 @@ export interface User {
   village: string;
   nid?: string;
   status?: 'active' | 'suspended';
+  isVerified?: boolean;
 }
 
 export interface LedgerEntry {

@@ -96,24 +96,24 @@ const BottomNav: React.FC = () => {
   if (isAtLanding) return null;
 
   return (
-    <div className="fixed bottom-2 left-0 right-0 z-[80] flex justify-center items-end gap-5 pointer-events-auto px-6 pb-4">
+    <div className="fixed bottom-2 left-0 right-0 z-[80] flex justify-center items-end gap-5 pointer-events-none px-6 pb-2">
       <button 
         onClick={() => navigate('/info-submit')}
-        className={`w-12 h-12 rounded-full metallic-blue transition-all duration-300 ${isSubmit ? 'glow-active scale-110' : 'opacity-90'}`}
+        className={`w-12 h-12 rounded-full metallic-blue pointer-events-auto transition-all duration-300 ${isSubmit ? 'glow-active scale-110' : 'opacity-90'}`}
       >
         <PlusCircle size={22} strokeWidth={isSubmit ? 3 : 2} className="text-white" />
       </button>
 
       <button 
         onClick={handleGlobalBack}
-        className={`w-14 h-14 rounded-full metallic-blue -translate-y-2 transition-all duration-300 shadow-2xl flex items-center justify-center border-2 border-white/20`}
+        className={`w-14 h-14 rounded-full metallic-blue pointer-events-auto -translate-y-1 transition-all duration-300 shadow-xl flex items-center justify-center`}
       >
         <span className="text-white font-black text-[12px] uppercase tracking-tighter">Back</span>
       </button>
 
       <button 
         onClick={() => navigate('/auth')}
-        className={`w-12 h-12 rounded-full metallic-blue transition-all duration-300 ${isProfile ? 'glow-active scale-110' : 'opacity-90'}`}
+        className={`w-12 h-12 rounded-full metallic-blue pointer-events-auto transition-all duration-300 ${isProfile ? 'glow-active scale-110' : 'opacity-90'}`}
       >
         <UserIcon size={22} strokeWidth={isProfile ? 3 : 2} className="text-white" />
       </button>
@@ -305,7 +305,7 @@ const App = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-300 overflow-x-hidden ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-white text-[#1A1A1A]'}`}>
+    <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-white text-[#1A1A1A]'}`}>
       {!isLanding && (
         <>
           <div className={`fixed inset-0 z-[100] transition-opacity duration-300 ${isDrawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -441,7 +441,7 @@ const App = () => {
         </div>
       )}
 
-      <main className={`flex-1 w-full max-w-md mx-auto relative ${isLanding ? 'p-0 m-0 h-screen' : 'pb-24 overflow-y-auto no-scrollbar'}`}>
+      <main className={`max-w-md mx-auto relative ${isLanding ? 'p-0 m-0 w-full h-screen' : 'h-[calc(100vh-64px)] overflow-y-auto no-scrollbar'}`}>
         <Routes>
           <Route path="/" element={<LandingScreen isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} appLogo={appLogo} />} />
           <Route path="/services" element={<Home notices={notices} isAdmin={isAdminLoggedIn} user={currentUser} />} />

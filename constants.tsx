@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   ShieldAlert, 
@@ -29,7 +30,7 @@ import { MainMenu } from './types';
  * FINALIZED ORDER AS PER USER REQUEST:
  * Page 1 (12 items):
  * 1. Hotline, 2. Tradition, 3. Weather
- * 4. Transport, 5. Mobile Number, 6. Digital Ledger
+ * 4. Bus (formerly Transport), 5. Mobile Number, 6. Digital Ledger
  * 7. Online Haat, 8. Local News, 9. Legal Services
  * 10. KP Chat, 11. Medical Service, 12. My Profile
  * Page 2:
@@ -78,7 +79,7 @@ export const CATEGORIES: MainMenu[] = [
   },
   {
     id: '3',
-    name: 'যাতায়াত',
+    name: 'বাস',
     icon: 'Bus',
     color: '#E67E22',
     subMenus: [
