@@ -56,12 +56,10 @@ const KPCommunityChat: React.FC = () => {
   const [view, setView] = useState<'chats' | 'users' | 'requests' | 'friends'>('chats');
   const [loading, setLoading] = useState(true);
   
-  // Jitsi State
   const [isCalling, setIsCalling] = useState(false);
   const jitsiContainerRef = useRef<HTMLDivElement>(null);
   const jitsiApiRef = useRef<any>(null);
 
-  // Data States
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [friends, setFriends] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
@@ -83,7 +81,6 @@ const KPCommunityChat: React.FC = () => {
     const user = JSON.parse(saved);
     setCurrentUser(user);
 
-    // Initial Data Fetch
     fetchUsers(user.memberId);
     listenToFriends(user.memberId);
     listenToRequests(user.memberId);
@@ -96,13 +93,12 @@ const KPCommunityChat: React.FC = () => {
     }
   }, [messages]);
 
-  // Jitsi Initialization
   useEffect(() => {
     if (isCalling && activeChat && currentUser && jitsiContainerRef.current) {
-        // Generating a secure unique room ID with specific prefix
         const ids = [currentUser.memberId, activeChat.memberId].sort();
         const roomName = `KP_Private_Call_${ids[0]}_TO_${ids[1]}_Secure`;
         
+        // Ensure Jitsi API is globally available via index.html script tag
         // @ts-ignore
         if (window.JitsiMeetExternalAPI) {
             // @ts-ignore
@@ -126,15 +122,10 @@ const KPCommunityChat: React.FC = () => {
                     enableLobby: false,
                     requireDisplayName: false,
                     enableNoAudioDetection: true,
-                    disableModeratorIndicator: true, // Hide moderator badge
+                    disableModeratorIndicator: true, 
                     defaultLanguage: 'bn',
                     p2p: { enabled: true },
                     doNotStoreRoom: true,
-                    remoteVideoMenu: {
-                        disableKick: true
-                    },
-                    disableRemoteMute: true,
-                    // Prevention of any app download prompts
                     mobileAppPromo: false,
                     hideConferenceSubject: true,
                     hideConferenceTimer: false
@@ -165,7 +156,7 @@ const KPCommunityChat: React.FC = () => {
             jitsiApiRef.current = null;
         }
     };
-  }, [isCalling]);
+  }, [isCalling, activeChat, currentUser]);
 
   const handleEndCall = () => {
     if (jitsiApiRef.current) {
@@ -301,7 +292,6 @@ const KPCommunityChat: React.FC = () => {
     );
   }
 
-  // Voice Call View (Embedded Iframe)
   if (isCalling && activeChat) {
     return (
         <div className="fixed inset-0 z-[160] bg-slate-950 flex flex-col animate-in fade-in duration-300">
@@ -351,7 +341,7 @@ const KPCommunityChat: React.FC = () => {
           </header>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50/50 no-scrollbar">
-              {messages.map((m, idx) => {
+              {messages.map((m) => {
                   const isMe = m.senderId === currentUser.memberId;
                   return (
                     <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-1`}>
@@ -383,8 +373,8 @@ const KPCommunityChat: React.FC = () => {
   }
 
   const searchResults = allUsers.filter(u => 
-    u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.village.toLowerCase().includes(searchTerm.toLowerCase())
+    (u.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (u.village || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
