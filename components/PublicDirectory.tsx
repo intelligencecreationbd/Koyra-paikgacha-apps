@@ -118,7 +118,6 @@ const PublicDirectory: React.FC<PublicDirectoryProps> = ({ id, categoryName, pat
   const searchParams = new URLSearchParams(location.search);
   const profileIdFromUrl = searchParams.get('item');
 
-  // Logic: Always sync selections with URL to avoid reset bugs
   const selections = useMemo(() => pathParts, [pathParts]);
 
   const selectedItem = useMemo(() => {
@@ -212,7 +211,6 @@ const PublicDirectory: React.FC<PublicDirectoryProps> = ({ id, categoryName, pat
 
   const handleSelection = (levelIdx: number, value: string) => {
     if (!value) {
-      // Truncate path to go back to parent conceptually
       if (levelIdx === 0) onNavigate(`/category/15`);
       else {
         const parentPath = selections.slice(0, levelIdx).join('/');
@@ -220,8 +218,6 @@ const PublicDirectory: React.FC<PublicDirectoryProps> = ({ id, categoryName, pat
       }
       return;
     }
-    
-    // Logic: Preserve previous levels, append new one
     const newPath = selections.slice(0, levelIdx);
     newPath.push(value);
     onNavigate(`/category/15/${newPath.join('/')}`);
@@ -248,64 +244,9 @@ const PublicDirectory: React.FC<PublicDirectoryProps> = ({ id, categoryName, pat
     );
   }, [searchTerm, isSearchMode, globalData, dataList]);
 
-  if (selectedItem) {
-    return (
-      <div className="animate-in slide-in-from-bottom-6 duration-500 w-full flex flex-col items-center pb-10 space-y-6 relative">
-        <header className="w-full flex items-center justify-between sticky top-0 z-[110] bg-white/80 backdrop-blur-md py-3 px-1">
-           <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm active:scale-90 transition-all">
-             <ChevronLeft size={24} className="text-slate-800" />
-           </button>
-           <h3 className="font-black text-slate-800">বিস্তারিত প্রোফাইল</h3>
-           <div className="w-12 h-12"></div>
-        </header>
-
-        <div className="w-full bg-white p-8 rounded-[45px] shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-slate-50 space-y-8">
-            <div className="flex flex-col items-center gap-5">
-              <div className="relative">
-                <div className="w-32 h-32 rounded-[40px] border-[5px] border-white shadow-xl overflow-hidden bg-slate-50 flex items-center justify-center text-slate-200">
-                  {selectedItem.photo ? <img src={selectedItem.photo} className="w-full h-full object-cover" alt="" /> : <UserCircle size={60} strokeWidth={1} />}
-                </div>
-                <div className="absolute -bottom-2 -right-2 p-2.5 bg-blue-600 text-white rounded-2xl shadow-lg border-4 border-white">
-                   <CheckCircle2 size={16} />
-                </div>
-              </div>
-              <div className="text-center space-y-1">
-                <h1 className="text-2xl font-black text-slate-800 leading-tight">{selectedItem.name}</h1>
-                <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">{selectedItem.designation || 'বিস্তারিত'}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {selectedItem.mobile && (
-                <MobileActionRow mobile={selectedItem.mobile} label="প্রাথমিক মোবাইল নম্বর" />
-              )}
-              {selectedItem.extraMobiles && selectedItem.extraMobiles.map((mob: string, i: number) => mob && (
-                <MobileActionRow key={i} mobile={mob} label={`অতিরিক্ত নম্বর (${toBn(i + 1)})`} />
-              ))}
-              {selectedItem.email && (
-                <ContactInfoRow icon={Mail} label="ইমেইল এড্রেস" value={selectedItem.email} colorClass="bg-blue-50" iconColor="text-blue-500" />
-              )}
-              {selectedItem.address && (
-                <ContactInfoRow icon={MapPin} label="ঠিকানা" value={selectedItem.address} colorClass="bg-emerald-50" iconColor="text-emerald-500" />
-              )}
-              {selectedItem.customInfo && selectedItem.customInfo.map((info: any, i: number) => (info.label && info.value) && (
-                <ContactInfoRow key={i} icon={Type} label={info.label} value={info.value} colorClass="bg-indigo-50" iconColor="text-indigo-500" />
-              ))}
-              {selectedItem.description && (
-                <div className="bg-slate-50/50 p-6 rounded-[32px] border border-slate-100 text-left">
-                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2 pl-1">অতিরিক্ত বিবরণ</p>
-                   <p className="text-sm font-bold text-slate-500 leading-relaxed whitespace-pre-line">{selectedItem.description}</p>
-                </div>
-              )}
-            </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-5">
-      <header className="flex items-center justify-between mb-2">
+    <div className="flex flex-col h-[calc(100vh-64px)] animate-in fade-in duration-500">
+      <header className="flex items-center justify-between mb-4 shrink-0">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90 shrink-0">
             <ChevronLeft size={20} className="text-slate-800" />
@@ -325,116 +266,145 @@ const PublicDirectory: React.FC<PublicDirectoryProps> = ({ id, categoryName, pat
         </button>
       </header>
 
-      {isSearchMode ? (
-        <div className="space-y-5 animate-in slide-in-from-top-4 duration-500">
-           <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-              <input 
-                  autoFocus
-                  className="w-full pl-12 pr-5 py-4 bg-white border border-slate-100 rounded-[22px] font-bold outline-none shadow-sm focus:border-blue-400 transition-all" 
-                  placeholder="নাম, পদবী, মোবাইল বা ঠিকানা দিয়ে খুঁজুন..." 
-                  value={searchTerm} 
-                  onChange={e => setSearchTerm(e.target.value)} 
-              />
-           </div>
-           
-           <div className="space-y-3 pb-24">
-              {searchTerm.trim().length > 0 ? (
-                filteredSearchResults.length === 0 ? (
-                  <div className="py-24 text-center opacity-30 flex flex-col items-center gap-4">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200"><Search size={32} /></div>
-                    <p className="font-bold text-slate-400">এই তথ্যে কিছু খুঁজে পাওয়া যায়নি</p>
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-40 space-y-5">
+        {selectedItem ? (
+          <div className="animate-in slide-in-from-bottom-6 duration-500 w-full flex flex-col items-center space-y-6">
+            <div className="w-full bg-white p-8 rounded-[45px] shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-slate-50 space-y-8">
+                <div className="flex flex-col items-center gap-5">
+                  <div className="relative">
+                    <div className="w-32 h-32 rounded-[40px] border-[5px] border-white shadow-xl overflow-hidden bg-slate-50 flex items-center justify-center text-slate-200">
+                      {selectedItem.photo ? <img src={selectedItem.photo} className="w-full h-full object-cover" alt="" /> : <UserCircle size={60} strokeWidth={1} />}
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 p-2.5 bg-blue-600 text-white rounded-2xl shadow-lg border-4 border-white">
+                       <CheckCircle2 size={16} />
+                    </div>
                   </div>
-                ) : (
-                  <>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">সার্চ ফলাফল ({toBn(filteredSearchResults.length)})</p>
-                    {filteredSearchResults.map((item) => (
-                      <button key={item.id} onClick={() => openProfile(item)} className="w-full flex items-center justify-between p-5 bg-white rounded-[32px] border border-slate-50 shadow-sm active:scale-[0.98] transition-all text-left">
-                        <div className="flex items-center gap-4 flex-1 overflow-hidden">
-                          <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-200 shrink-0">
-                            {item.photo ? <img src={item.photo} className="w-full h-full object-cover" alt="" /> : <UserCircle size={28} />}
-                          </div>
-                          <div className="overflow-hidden">
-                            <h4 className="font-black text-slate-800 truncate text-sm">{item.name}</h4>
-                            <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">{item.designation || 'নির্ধারিত নয়'}</p>
-                          </div>
-                        </div>
-                        <ChevronRight size={18} className="text-slate-200 shrink-0" />
-                      </button>
-                    ))}
-                  </>
-                )
-              ) : (
-                <div className="py-24 text-center opacity-30 flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200"><Search size={32} /></div>
-                  <p className="font-bold text-slate-400">পুরো অ্যাপের মোবাইল নম্বর খুঁজে পেতে এখানে লিখুন</p>
+                  <div className="text-center space-y-1">
+                    <h1 className="text-2xl font-black text-slate-800 leading-tight">{selectedItem.name}</h1>
+                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">{selectedItem.designation || 'বিস্তারিত'}</p>
+                  </div>
                 </div>
-              )}
-           </div>
-        </div>
-      ) : (
-        <div className="space-y-5 animate-in fade-in duration-500">
-           <div className="bg-slate-50/50 p-6 rounded-[35px] border border-slate-100 shadow-inner space-y-5">
-              {levels.map((level, idx) => (
-                  <div key={idx} className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2 block">
-                          {idx === 0 ? 'প্রধান বিভাগ নির্বাচন করুন' : `সাব-ক্যাটাগরি (স্তর ${toBn(idx)})`}
-                      </label>
-                      <div className="relative">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500"><LayoutGrid size={16} /></div>
-                          <select 
-                              className="w-full pl-11 pr-10 py-4 bg-white border border-slate-100 rounded-[22px] font-black text-slate-800 appearance-none outline-none shadow-sm focus:border-blue-400 transition-all text-sm"
-                              value={selections[idx] || ''}
-                              onChange={(e) => handleSelection(idx, e.target.value)}
-                          >
-                              <option value="">নির্বাচন করুন...</option>
-                              {level.items.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                          </select>
-                          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={18} />
-                      </div>
-                  </div>
-              ))}
-           </div>
-
-           {leafId && (
-              <div className="space-y-4 animate-in fade-in duration-500">
-                  {isLoading ? (
-                    <div className="py-20 flex flex-col items-center justify-center gap-4 opacity-20"><Clock className="animate-spin" size={40} /></div>
-                  ) : filteredSearchResults.length === 0 ? (
+                <div className="space-y-4">
+                  {selectedItem.mobile && <MobileActionRow mobile={selectedItem.mobile} label="প্রাথমিক মোবাইল নম্বর" />}
+                  {selectedItem.extraMobiles && selectedItem.extraMobiles.map((mob: string, i: number) => mob && (
+                    <MobileActionRow key={i} mobile={mob} label={`অতিরিক্ত নম্বর (${toBn(i + 1)})`} />
+                  ))}
+                  {selectedItem.email && <ContactInfoRow icon={Mail} label="ইমেইল এড্রেস" value={selectedItem.email} colorClass="bg-blue-50" iconColor="text-blue-500" />}
+                  {selectedItem.address && <ContactInfoRow icon={MapPin} label="ঠিকানা" value={selectedItem.address} colorClass="bg-emerald-50" iconColor="text-emerald-500" />}
+                  {selectedItem.customInfo && selectedItem.customInfo.map((info: any, i: number) => (info.label && info.value) && (
+                    <ContactInfoRow key={i} icon={Type} label={info.label} value={info.value} colorClass="bg-indigo-50" iconColor="text-indigo-500" />
+                  ))}
+                </div>
+            </div>
+          </div>
+        ) : isSearchMode ? (
+          <div className="space-y-5 animate-in slide-in-from-top-4 duration-500">
+             <div className="relative mx-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                <input 
+                    autoFocus
+                    className="w-full pl-12 pr-5 py-4 bg-white border border-slate-100 rounded-[22px] font-bold outline-none shadow-sm focus:border-blue-400 transition-all" 
+                    placeholder="নাম, পদবী, মোবাইল বা ঠিকানা দিয়ে খুঁজুন..." 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)} 
+                />
+             </div>
+             <div className="space-y-3 px-1">
+                {searchTerm.trim().length > 0 ? (
+                  filteredSearchResults.length === 0 ? (
                     <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200"><Search size={32} /></div>
-                        <p className="font-bold text-slate-400">এই ক্যাটাগরিতে কোনো তথ্য পাওয়া যায়নি</p>
+                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200"><Search size={32} /></div>
+                      <p className="font-bold text-slate-400">এই তথ্যে কিছু খুঁজে পাওয়া যায়নি</p>
                     </div>
                   ) : (
-                    <div className="space-y-3 pb-24">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">ফলাফল ({toBn(filteredSearchResults.length)})</p>
-                        {filteredSearchResults.map((item) => (
-                           <button key={item.id} onClick={() => openProfile(item)} className="w-full flex items-center justify-between p-5 bg-white rounded-[32px] border border-slate-100 shadow-sm active:scale-[0.98] transition-all text-left group">
-                              <div className="flex items-center gap-4 flex-1 overflow-hidden">
-                                 <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-200 shrink-0 overflow-hidden">
-                                    {item.photo ? <img src={item.photo} className="w-full h-full object-cover" alt="" /> : <UserCircle size={28} />}
-                                 </div>
-                                 <div className="overflow-hidden">
-                                    <h4 className="font-black text-slate-800 truncate text-sm">{item.name}</h4>
-                                    <p className="text-[10px] font-bold text-slate-400 mt-0.5 truncate">{item.designation || 'নির্ধারিত নয়'}</p>
-                                 </div>
-                              </div>
-                              <ChevronRight size={18} className="text-slate-200 group-hover:text-blue-500 transition-colors shrink-0" />
-                           </button>
-                        ))}
+                    <>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">সার্চ ফলাফল ({toBn(filteredSearchResults.length)})</p>
+                      {filteredSearchResults.map((item) => (
+                        <button key={item.id} onClick={() => openProfile(item)} className="w-full flex items-center justify-between p-5 bg-white rounded-[32px] border border-slate-50 shadow-sm active:scale-[0.98] transition-all text-left">
+                          <div className="flex items-center gap-4 flex-1 overflow-hidden">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-200 shrink-0">
+                              {item.photo ? <img src={item.photo} className="w-full h-full object-cover" alt="" /> : <UserCircle size={28} />}
+                            </div>
+                            <div className="overflow-hidden">
+                              <h4 className="font-black text-slate-800 truncate text-sm">{item.name}</h4>
+                              <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">{item.designation || 'নির্ধারিত নয়'}</p>
+                            </div>
+                          </div>
+                          <ChevronRight size={18} className="text-slate-200 shrink-0" />
+                        </button>
+                      ))}
+                    </>
+                  )
+                ) : (
+                  <div className="py-24 text-center opacity-30 flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200"><Search size={32} /></div>
+                    <p className="font-bold text-slate-400">পুরো অ্যাপের মোবাইল নম্বর খুঁজে পেতে এখানে লিখুন</p>
+                  </div>
+                )}
+             </div>
+          </div>
+        ) : (
+          <div className="space-y-5 animate-in fade-in duration-500">
+             <div className="bg-slate-50/50 p-6 rounded-[35px] border border-slate-100 shadow-inner space-y-5 mx-1">
+                {levels.map((level, idx) => (
+                    <div key={idx} className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2 block text-left">
+                            {idx === 0 ? 'প্রধান বিভাগ নির্বাচন করুন' : `সাব-ক্যাটাগরি (স্তর ${toBn(idx)})`}
+                        </label>
+                        <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500"><LayoutGrid size={16} /></div>
+                            <select 
+                                className="w-full pl-11 pr-10 py-4 bg-white border border-slate-100 rounded-[22px] font-black text-slate-800 appearance-none outline-none shadow-sm focus:border-blue-400 transition-all text-sm"
+                                value={selections[idx] || ''}
+                                onChange={(e) => handleSelection(idx, e.target.value)}
+                            >
+                                <option value="">নির্বাচন করুন...</option>
+                                {level.items.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={18} />
+                        </div>
                     </div>
-                  )}
-              </div>
-           )}
+                ))}
+             </div>
 
-           {!leafId && !isLoading && (
-              <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200"><Filter size={32} /></div>
-                  <p className="font-bold text-slate-400 px-10 text-sm">কন্টাক্ট লিস্ট দেখতে অনুগ্রহ করে উপরের ড্রপডাউন থেকে ক্যাটাগরিগুলো নির্বাচন করুন</p>
-              </div>
-           )}
-        </div>
-      )}
+             {leafId ? (
+                <div className="space-y-4 animate-in fade-in duration-500 px-1">
+                    {isLoading ? (
+                      <div className="py-20 flex flex-col items-center justify-center gap-4 opacity-20"><Clock className="animate-spin" size={40} /></div>
+                    ) : filteredSearchResults.length === 0 ? (
+                      <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
+                          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200"><Search size={32} /></div>
+                          <p className="font-bold text-slate-400">এই ক্যাটাগরিতে কোনো তথ্য পাওয়া যায়নি</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2 text-left">ফলাফল ({toBn(filteredSearchResults.length)})</p>
+                          {filteredSearchResults.map((item) => (
+                             <button key={item.id} onClick={() => openProfile(item)} className="w-full flex items-center justify-between p-5 bg-white rounded-[32px] border border-slate-100 shadow-sm active:scale-[0.98] transition-all text-left group">
+                                <div className="flex items-center gap-4 flex-1 overflow-hidden">
+                                   <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                                      {item.photo ? <img src={item.photo} className="w-full h-full object-cover" alt="" /> : <UserCircle size={28} className="text-slate-200" />}
+                                   </div>
+                                   <div className="overflow-hidden">
+                                      <h4 className="font-black text-slate-800 truncate text-sm">{item.name}</h4>
+                                      <p className="text-[10px] font-bold text-slate-400 mt-0.5 truncate">{item.designation || 'নির্ধারিত নয়'}</p>
+                                   </div>
+                                </div>
+                                <ChevronRight size={18} className="text-slate-200 group-hover:text-blue-500 transition-colors shrink-0" />
+                             </button>
+                          ))}
+                      </div>
+                    )}
+                </div>
+             ) : (
+                <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200"><Filter size={32} /></div>
+                    <p className="font-bold text-slate-400 px-10 text-sm">কন্টাক্ট লিস্ট দেখতে অনুগ্রহ করে ড্রপডাউন থেকে ক্যাটাগরিগুলো নির্বাচন করুন</p>
+                </div>
+             )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

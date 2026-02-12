@@ -72,7 +72,7 @@ const EditField = ({ label, value, placeholder, onChange, icon, type = 'text', r
 /**
  * @LOCKED_COMPONENT
  * @Section Public Local News Service View
- * @Status Design Updated - Updated News Header & Latest News Sorting
+ * @Status Design Updated - news submission button visibility fixed with animation
  */
 export default function PublicNews({ onBack }: { onBack: () => void }) {
   const navigate = useNavigate();
@@ -160,7 +160,6 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
     onValue(newsRef, snap => {
       const val = snap.val();
       const list = val ? Object.keys(val).map(key => ({ ...val[key], id: key })) : [];
-      // Sort by timestamp if available, otherwise by date
       setNewsList(list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)));
       setLoading(false);
     });
@@ -530,8 +529,13 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest shimmer-text animate-sub-title">কয়রা পাইকগাছা কমিউনিটি এপস</p>
             </div>
           </div>
-          <div className="absolute right-0 top-1 flex items-center">
-            <button onClick={handleSubmissionClick} className="px-4 py-2.5 premium-btn-animate text-white rounded-xl font-black text-[10px] uppercase tracking-wide shadow-lg active:scale-95 transition-all flex items-center gap-2"><Plus size={12} strokeWidth={4} /> সংবাদ পাঠান</button>
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center">
+            <button 
+              onClick={handleSubmissionClick} 
+              className="px-4 py-2.5 submit-news-glow text-white rounded-xl font-black text-xs uppercase tracking-wide shadow-lg active:scale-95 transition-all flex items-center gap-2 border-b-2 border-green-800/20"
+            >
+              <Plus size={14} strokeWidth={4} /> সংবাদ পাঠান
+            </button>
           </div>
         </header>
 

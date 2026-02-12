@@ -50,14 +50,6 @@ const WhatsAppIcon = ({ size = 20 }: { size?: number }) => (
   </svg>
 );
 
-const SkeletonBus = () => (
-  <div className="space-y-4 animate-pulse pt-4">
-    {[1, 2, 3].map(i => (
-      <div key={i} className="h-24 bg-white border border-slate-100 rounded-[24px] w-full shadow-sm"></div>
-    ))}
-  </div>
-);
-
 const THEME_COLORS = [
   '#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1',
 ];
@@ -76,177 +68,105 @@ const PublicTransport: React.FC<{
     const busRef = ref(db, 'bus_counters');
     const unsubscribe = onValue(busRef, snap => {
       const data = snap.val();
-      if (data) {
-        setBusData(Object.keys(data).map(key => ({ ...data[key], id: key })));
-      }
+      if (data) setBusData(Object.keys(data).map(key => ({ ...data[key], id: key })));
       setIsLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  const uniqueRoutes = useMemo(() => {
-    return Array.from(new Set(busData.map(b => b.route))).filter(Boolean).map(r => ({ id: r, name: r }));
-  }, [busData]);
-
-  const filteredBuses = useMemo(() => {
-    return busData.filter(b => b.route === subId);
-  }, [busData, subId]);
-
-  const currentBus = useMemo(() => {
-    return busData.find(b => b.id === busId);
-  }, [busData, busId]);
+  const uniqueRoutes = useMemo(() => Array.from(new Set(busData.map(b => b.route))).filter(Boolean).map(r => ({ id: r, name: r })), [busData]);
+  const filteredBuses = useMemo(() => busData.filter(b => b.route === subId), [busData, subId]);
+  const currentBus = useMemo(() => busData.find(b => b.id === busId), [busData, busId]);
 
   const fareInfo = useMemo(() => {
     if (!currentBus) return null;
     const parts = [];
-    if (currentBus.acFare && currentBus.acFare.trim() !== '') {
-      parts.push(`এসি: ৳${toBn(currentBus.acFare)}`);
-    }
-    if (currentBus.nonAcFare && currentBus.nonAcFare.trim() !== '') {
-      parts.push(`নন-এসি: ৳${toBn(currentBus.nonAcFare)}`);
-    }
+    if (currentBus.acFare?.trim()) parts.push(`এসি: ৳${toBn(currentBus.acFare)}`);
+    if (currentBus.nonAcFare?.trim()) parts.push(`নন-এসি: ৳${toBn(currentBus.nonAcFare)}`);
     return parts.length > 0 ? `ভাড়া: ${parts.join(', ')}` : null;
   }, [currentBus]);
 
-  if (isLoading) return <div className="p-5 space-y-4"><SkeletonBus /></div>;
-
-  if (!subId) {
-    return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
-        <div className="flex items-center gap-4 mb-2">
-          <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90"><ChevronLeft size={24} /></button>
-          <div className="text-left">
-            <h2 className="text-xl font-black text-slate-800 leading-tight">যাতায়াত</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">রুটের তালিকা নির্বাচন করুন</p>
+  return (
+    <div className="flex flex-col h-[calc(100vh-64px)] animate-in fade-in duration-500">
+      <header className="flex items-center justify-between mb-4 shrink-0">
+        <div className="flex items-center gap-4 text-left overflow-hidden">
+          <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90 shrink-0">
+            <ChevronLeft size={24} className="text-slate-800" />
+          </button>
+          <div className="overflow-hidden">
+            <h2 className="text-xl font-black text-slate-800 leading-tight truncate">
+              {!subId ? 'যাতায়াত' : !busId ? subId : currentBus?.busName}
+            </h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+              {!subId ? 'রুটের তালিকা নির্বাচন করুন' : !busId ? 'বাস সার্ভিসের তালিকা' : 'কাউন্টার ও যোগাযোগ'}
+            </p>
           </div>
         </div>
-        
-        <div className="grid gap-4">
+      </header>
+
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-40 space-y-4">
+        {!subId ? (
+          <div className="grid gap-4">
             {uniqueRoutes.map((route, idx) => {
               const color = THEME_COLORS[idx % THEME_COLORS.length];
               return (
-                <button 
-                  key={route.id} 
-                  onClick={() => onNavigate(`/category/3/${route.id}`)}
-                  className="flex items-center justify-between p-5 bg-white rounded-[24px] premium-card active:scale-[0.98] transition-all group text-left border border-slate-50 relative overflow-hidden"
-                >
+                <button key={route.id} onClick={() => onNavigate(`/category/3/${route.id}`)} className="flex items-center justify-between p-5 bg-white rounded-[24px] premium-card active:scale-[0.98] transition-all group text-left border border-slate-50 relative overflow-hidden">
                   <div className="flex items-center gap-4 relative z-10">
-                     <div 
-                        className="p-3 rounded-2xl transition-all shadow-inner group-hover:scale-110"
-                        style={{ backgroundColor: `${color}15`, color: color, border: `1px solid ${color}20` }}
-                     >
-                        <Navigation size={20} />
-                     </div>
+                     <div className="p-3 rounded-2xl transition-all shadow-inner group-hover:scale-110" style={{ backgroundColor: `${color}15`, color: color, border: `1px solid ${color}20` }}><Navigation size={20} /></div>
                      <span className="font-black text-lg text-[#1A1A1A]">{route.name}</span>
                   </div>
                   <ArrowRight size={20} className="text-slate-200 group-hover:text-blue-600 transition-colors z-10" />
                 </button>
               );
             })}
-        </div>
-      </div>
-    );
-  }
-
-  if (subId && !busId) {
-    return (
-      <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
-        <div className="flex items-center gap-4 mb-2">
-          <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90"><ChevronLeft size={24} /></button>
-          <div className="text-left overflow-hidden">
-            <h2 className="text-xl font-black text-slate-800 leading-tight truncate">{subId}</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">বাস সার্ভিসের তালিকা</p>
           </div>
-        </div>
-        
-        {filteredBuses.length === 0 ? (
-          <div className="py-20 text-center opacity-30">তথ্য নেই।</div>
-        ) : (
+        ) : !busId ? (
           <div className="grid gap-4">
-              {filteredBuses.map((bus, index) => {
-                const iconColor = THEME_COLORS[index % THEME_COLORS.length];
+            {filteredBuses.map((bus, index) => {
+              const iconColor = THEME_COLORS[index % THEME_COLORS.length];
+              return (
+                <button key={bus.id} onClick={() => onNavigate(`/category/3/${subId}/${bus.id}`)} className="flex items-center justify-between p-5 bg-white rounded-[24px] premium-card active:scale-[0.98] transition-all group text-left border border-slate-50 overflow-hidden relative">
+                  <div className="flex items-center gap-4 flex-1 overflow-hidden relative z-10">
+                    <div className="p-3 rounded-2xl transition-all shadow-inner group-hover:scale-110 duration-300" style={{ backgroundColor: `${iconColor}15`, color: iconColor, border: `1px solid ${iconColor}20` }}><Bus size={22} strokeWidth={2.5} /></div>
+                    <div className="overflow-hidden">
+                        <h4 className="font-black text-lg text-[#1A1A1A] truncate leading-tight">{bus.busName}</h4>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">ভাড়া: ৳{toBn(bus.nonAcFare)} (নন-এসি)</p>
+                    </div>
+                  </div>
+                  <ArrowRight size={20} className="text-slate-200 group-hover:text-blue-600 transition-colors shrink-0 z-10" />
+                </button>
+              );
+            })}
+          </div>
+        ) : currentBus && (
+          <div className="space-y-6">
+            {fareInfo && <div className="mx-1 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 text-center font-black text-blue-600 text-xs uppercase tracking-widest">{fareInfo}</div>}
+            <div className="space-y-3">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] pl-2 text-left">কাউন্টার লিস্ট</p>
+              {currentBus.counters?.map((c, idx) => {
+                const color = THEME_COLORS[idx % THEME_COLORS.length];
                 return (
-                  <button 
-                    key={bus.id} 
-                    onClick={() => onNavigate(`/category/3/${subId}/${bus.id}`)} 
-                    className="flex items-center justify-between p-5 bg-white rounded-[24px] premium-card active:scale-[0.98] transition-all group text-left border border-slate-50 overflow-hidden relative"
-                  >
-                    <div className="flex items-center gap-4 flex-1 overflow-hidden relative z-10">
-                      <div 
-                        className="p-3 rounded-2xl transition-all shadow-inner group-hover:scale-110 duration-300"
-                        style={{ backgroundColor: `${iconColor}15`, color: iconColor, border: `1px solid ${iconColor}20` }}
-                      >
-                          <Bus size={22} strokeWidth={2.5} className="drop-shadow-sm" />
-                      </div>
+                  <div key={idx} className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div className="text-left flex items-center gap-4 overflow-hidden">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner" style={{ backgroundColor: `${color}10`, color: color, border: `1px solid ${color}15` }}><MapPin size={18} /></div>
                       <div className="overflow-hidden">
-                          <h4 className="font-black text-lg text-[#1A1A1A] truncate leading-tight">{bus.busName}</h4>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">ভাড়া: ৳{toBn(bus.nonAcFare)} (নন-এসি)</p>
+                        <p className="text-base font-black text-slate-800 leading-tight truncate">{c.name}</p>
+                        <p className="text-xs font-bold text-slate-400 font-inter mt-1 tracking-tight">{convertBnToEn(c.mobile)}</p>
                       </div>
                     </div>
-                    <ArrowRight size={20} className="text-slate-200 group-hover:text-blue-600 transition-colors shrink-0 z-10" />
-                  </button>
+                    <div className="flex gap-2 shrink-0">
+                      <a href={`tel:${convertBnToEn(c.mobile)}`} className="p-3 bg-[#0056b3] text-white rounded-xl shadow-lg active:scale-90 transition-all"><PhoneCall size={18} /></a>
+                      <a href={`https://wa.me/${formatWhatsAppNumber(c.mobile)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-[#25D366] text-white rounded-xl shadow-lg active:scale-90 transition-all"><WhatsAppIcon size={18} /></a>
+                    </div>
+                  </div>
                 );
               })}
+            </div>
           </div>
         )}
       </div>
-    );
-  }
-
-  if (busId && currentBus) {
-    return (
-      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 pb-20">
-        <div className="flex items-start justify-between mb-2">
-          <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90 shrink-0">
-            <ChevronLeft size={24} />
-          </button>
-          
-          <div className="flex-1 text-center px-2 overflow-hidden">
-            <h2 className="text-2xl font-black text-slate-800 leading-tight truncate">{currentBus.busName}</h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate">{currentBus.route}</p>
-            {fareInfo && (
-              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mt-0.5 truncate">{fareInfo}</p>
-            )}
-          </div>
-          <div className="w-12 h-12"></div>
-        </div>
-
-        <div className="space-y-3">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] pl-2 text-left">কাউন্টার ও যোগাযোগ</p>
-          {currentBus.counters?.map((c, idx) => {
-            const color = THEME_COLORS[idx % THEME_COLORS.length];
-            return (
-              <div key={idx} className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm flex items-center justify-between animate-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${idx * 100}ms` }}>
-                <div className="text-left flex items-center gap-4 overflow-hidden">
-                  <div 
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner"
-                    style={{ backgroundColor: `${color}10`, color: color, border: `1px solid ${color}15` }}
-                  >
-                    <MapPin size={18} />
-                  </div>
-                  <div className="overflow-hidden">
-                    <p className="text-base font-black text-slate-800 leading-tight truncate">{c.name}</p>
-                    {/* Ensure mobile numbers always display in English digits */}
-                    <p className="text-xs font-bold text-slate-400 font-inter mt-1 tracking-tight">{convertBnToEn(c.mobile)}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <a href={`tel:${convertBnToEn(c.mobile)}`} className="p-3 bg-[#0056b3] text-white rounded-xl shadow-lg active:scale-90 transition-all">
-                    <PhoneCall size={18} />
-                  </a>
-                  <a href={`https://wa.me/${formatWhatsAppNumber(c.mobile)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-[#25D366] text-white rounded-xl shadow-lg active:scale-90 transition-all">
-                    <WhatsAppIcon size={18} />
-                  </a>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 };
 
 export default PublicTransport;

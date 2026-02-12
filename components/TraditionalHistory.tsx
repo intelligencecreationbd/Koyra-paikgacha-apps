@@ -63,7 +63,7 @@ const SkeletonItem = () => (
 /**
  * @LOCKED_COMPONENT
  * @Section Traditional & Historical Information (ঐতিহ্য)
- * @Status Design & Content Finalized
+ * @Status Design & Content Finalized - Scroll Behavior Updated
  */
 const TraditionalHistory: React.FC<{ busId: string; onBack: () => void }> = ({ busId, onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -119,7 +119,7 @@ const TraditionalHistory: React.FC<{ busId: string; onBack: () => void }> = ({ b
               { title: 'ঐতিহাসিক প্রেক্ষাপট ও নামকরণ', icon: 'Library', text: '১৫শ শতাব্দীতে খান জাহান আলী (র.)-এর অনুসারীরা এখানে বসতি স্থাপন করেন। নামকরণ নিয়ে মতভেদ থাকলেও ', highlight: 'কাওরা গোষ্ঠী', subText: 'অথবা কয়লা পরিবহনের ঘাট থেকে "কয়রা" নামটি এসেছে বলে ধারণা করা হয়।' },
               { title: 'নদ-নদী ও সুন্দরবন', icon: 'Waves', text: 'এটি কপোতাক্ষ, শাকবাড়িয়া ও শিবসা নদীবেষ্টিত জনপদ। কয়রাকে বলা হয় ', highlight: 'সুন্দরবনের প্রবেশদ্বার।', subText: 'উপজেলার দক্ষিণে সুন্দরবনের কাশিয়াবাদ রেঞ্জ অবস্থিত যা পর্যটনের অন্যতম আকর্ষণ।' },
               { title: 'পুরাকীর্তি ও দর্শনীয় স্থান', icon: 'Landmark', text: 'খান জাহান আলী শৈলীর ', highlight: 'মসজিদকুঁড় ৯ গুম্বুজ মসজিদ', subText: 'এবং সুন্দরবনের তীরে অবস্থিত মোগল আমলের শেষার্ধের মন্দির এর প্রধান আকর্ষণ।' },
-              { title: 'সংস্কৃতি ও নৃগোষ্ঠী', icon: 'Users2', text: 'এখানে ', highlight: 'মাহাতো ও মুণ্ডা', subText: 'ক্ষুদ্র নৃগোষ্ঠীর বসবাস রয়েছে। বনবিবির পালা ও গাজীর গান এখানকার লোকসংস্কৃতির অবিচ্ছেদ্য অংশ।' }
+              { title: 'সংস্কৃতি ও নৃগোষ্ঠী', icon: 'Users2', text: 'এখানে ', highlight: 'মাহাতো ও মুণ্ডা', subText: 'ক্ষুদ্র নৃগোষ্ঠীর বসবাস রয়েছে। বনবিবির পালা ও গাজীর গান এখানকার লোকসংস্কৃতির অবিচ্ছেদ্য অংশ।' }
             ],
             expandables: [
               { id: 'koy_war', title: 'মুক্তিযুদ্ধের স্মৃতি ও গৌরব', icon: 'History', text: 'মুক্তিযুদ্ধের সময় কয়রা উপজেলা ৯নং সেক্টরের অধীন ছিল। এখানে ৯ নং সাব-সেক্টর হেডকোয়ার্টার স্থাপিত হয়েছিল যেটা আমাদী ইউনিয়নে বাছাড়বাড়ি-মনোরঞ্জন ক্যাম্প নামে সুপরিচিত এবং এখান থেকেই মুক্তিবাহিনী ও মুজিববাহিনীর মোট ২৩টি ক্যাম্প ও অধিকাংশ অভিযান পরিচালিত হতো।' },
@@ -180,69 +180,80 @@ const TraditionalHistory: React.FC<{ busId: string; onBack: () => void }> = ({ b
   if (!content) return <div className="py-20 text-center opacity-30">তথ্য পাওয়া যায়নি।</div>;
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-700 pb-10">
-      <div className="flex items-center gap-4 mb-2">
-        <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90"><ChevronLeft size={24} /></button>
-        <div className="text-left">
-          <h2 className="text-xl font-black text-slate-800 leading-tight">{content.title}</h2>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">ঐতিহ্য ও সংস্কৃতির সংগৃহীত তথ্যমালা</p>
+    <div className="flex flex-col fixed inset-0 top-16 bg-white animate-in fade-in duration-700">
+      {/* Fixed Local Header */}
+      <div className="shrink-0 p-5 pb-3 border-b border-slate-50 bg-white/80 backdrop-blur-md z-20">
+        <div className="flex items-center gap-4 max-w-md mx-auto">
+          <button 
+            onClick={onBack} 
+            className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <div className="text-left overflow-hidden">
+            <h2 className="text-lg font-black text-slate-800 leading-tight truncate">{content.title}</h2>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">ঐতিহ্য ও সংস্কৃতির সংগৃহীত তথ্যমালা</p>
+          </div>
         </div>
       </div>
 
-      {content.cards?.map((card: any, idx: number) => {
-        const CardIcon = ICON_MAP[card.icon] || Info;
-        const style = getIconStyle(card.icon);
-        return (
-          <div key={idx} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm text-left space-y-3">
-            <div className="flex items-center gap-3">
-              <div className={`p-2.5 ${style.bg} border ${style.border} rounded-2xl ${style.text} shadow-sm`}><CardIcon size={20} /></div>
-              <h4 className="font-black text-slate-800 text-lg">{card.title}</h4>
-            </div>
-            <p className="text-sm font-bold text-slate-600 leading-relaxed text-justify">
-              {card.text} <span className="text-blue-700 font-black px-1.5 py-0.5 bg-blue-50 rounded-lg">{card.highlight}</span>
-            </p>
-            {card.subText && <p className="text-[11px] font-bold text-slate-400 pl-4 border-l-2 border-slate-100">{card.subText}</p>}
-          </div>
-        );
-      })}
-
-      {content.expandables?.map((section: any) => {
-        const SectionIcon = ICON_MAP[section.icon] || Info;
-        const isExpanded = isSectionExpanded[section.id];
-        const style = getIconStyle(section.icon);
-        return (
-          <div key={section.id} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm text-left space-y-3">
-            <div className="flex items-center gap-3">
-              <div className={`p-2.5 ${style.bg} border ${style.border} rounded-2xl ${style.text} shadow-sm`}><SectionIcon size={20} /></div>
-              <h4 className="font-black text-slate-800 text-lg">{section.title}</h4>
-            </div>
-            <div className="relative">
-              <p className={`text-sm font-bold text-slate-600 leading-relaxed text-justify whitespace-pre-line ${isExpanded ? '' : 'line-clamp-4'}`}>
-                {section.text}
+      {/* Scrollable Body Content */}
+      <div className="flex-1 overflow-y-auto no-scrollbar p-5 pb-40 space-y-5 max-w-md mx-auto w-full">
+        {content.cards?.map((card: any, idx: number) => {
+          const CardIcon = ICON_MAP[card.icon] || Info;
+          const style = getIconStyle(card.icon);
+          return (
+            <div key={idx} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm text-left space-y-3 animate-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 ${style.bg} border ${style.border} rounded-2xl ${style.text} shadow-sm`}><CardIcon size={20} /></div>
+                <h4 className="font-black text-slate-800 text-lg">{card.title}</h4>
+              </div>
+              <p className="text-sm font-bold text-slate-600 leading-relaxed text-justify">
+                {card.text} <span className="text-blue-700 font-black px-1.5 py-0.5 bg-blue-50 rounded-lg">{card.highlight}</span>
               </p>
-              <button onClick={() => setIsSectionExpanded(prev => ({...prev, [section.id]: !isExpanded}))} className="mt-2 flex items-center gap-1.5 text-xs font-black text-blue-600">
-                {isExpanded ? 'সংক্ষিপ্ত করুন' : 'আরও পড়ুন'} {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-              </button>
+              {card.subText && <p className="text-[11px] font-bold text-slate-400 pl-4 border-l-2 border-slate-100">{card.subText}</p>}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
 
-      {content.spots?.map((spot: any, idx: number) => {
-        const style = getIconStyle(spot.icon);
-        return (
-          <div key={idx} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm text-left space-y-4">
-            <div className="flex items-center gap-4">
-              <div className={`p-3.5 ${style.bg} border ${style.border} rounded-2xl ${style.text} shadow-sm`}><Info size={24} /></div>
-              <div>
-                <h4 className="font-black text-slate-800 text-lg leading-tight">{spot.title}</h4>
-                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1">{spot.highlight}</p>
+        {content.expandables?.map((section: any) => {
+          const SectionIcon = ICON_MAP[section.icon] || Info;
+          const isExpanded = isSectionExpanded[section.id];
+          const style = getIconStyle(section.icon);
+          return (
+            <div key={section.id} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm text-left space-y-3">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 ${style.bg} border ${style.border} rounded-2xl ${style.text} shadow-sm`}><SectionIcon size={20} /></div>
+                <h4 className="font-black text-slate-800 text-lg">{section.title}</h4>
+              </div>
+              <div className="relative">
+                <p className={`text-sm font-bold text-slate-600 leading-relaxed text-justify whitespace-pre-line ${isExpanded ? '' : 'line-clamp-4'}`}>
+                  {section.text}
+                </p>
+                <button onClick={() => setIsSectionExpanded(prev => ({...prev, [section.id]: !isExpanded}))} className="mt-2 flex items-center gap-1.5 text-xs font-black text-blue-600">
+                  {isExpanded ? 'সংক্ষিপ্ত করুন' : 'আরও পড়ুন'} {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                </button>
               </div>
             </div>
-            <p className="text-sm font-bold text-slate-500 leading-relaxed text-justify">{spot.desc}</p>
-          </div>
-        );
-      })}
+          );
+        })}
+
+        {content.spots?.map((spot: any, idx: number) => {
+          const style = getIconStyle(spot.icon);
+          return (
+            <div key={idx} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm text-left space-y-4">
+              <div className="flex items-center gap-4">
+                <div className={`p-3.5 ${style.bg} border ${style.border} rounded-2xl ${style.text} shadow-sm`}><Info size={24} /></div>
+                <div>
+                  <h4 className="font-black text-slate-800 text-lg leading-tight">{spot.title}</h4>
+                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1">{spot.highlight}</p>
+                </div>
+              </div>
+              <p className="text-sm font-bold text-slate-500 leading-relaxed text-justify">{spot.desc}</p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

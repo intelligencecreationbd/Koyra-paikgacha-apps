@@ -21,7 +21,7 @@ import {
 /**
  * @LOCKED_COMPONENT
  * @Section Public Weather Service View (আবহাওয়া)
- * @Status Design & Content Finalized
+ * @Status Scrolling Fixed & UI Optimized
  */
 
 interface WeatherData {
@@ -53,6 +53,7 @@ const toBn = (num: string | number) =>
 const getWeatherIcon = (code: number, isDay: boolean = true) => {
   if (code === 0) return <Sun className="text-orange-400" size={48} />;
   if (code >= 1 && code <= 3) return <CloudSun className="text-blue-400" size={48} />;
+  if (code >= 45 && code <= 48) return <Cloud className="text-slate-300" size={48} />;
   if (code >= 51 && code <= 67) return <CloudRain className="text-cyan-500" size={48} />;
   if (code >= 80 && code <= 82) return <CloudRain className="text-blue-500" size={48} />;
   if (code >= 95) return <AlertTriangle className="text-red-500" size={48} />;
@@ -128,8 +129,9 @@ const PublicWeather: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const isDisaster = weather && weather.current.windSpeed > 25;
 
   return (
-    <div className="animate-in fade-in duration-500">
-      <header className="flex items-center justify-between mb-6">
+    <div className="flex flex-col h-full animate-in fade-in duration-500">
+      {/* Header Section */}
+      <header className="flex items-center justify-between mb-4 shrink-0 px-1">
         <div className="flex items-center gap-4">
           <button 
             onClick={onBack} 
@@ -147,9 +149,10 @@ const PublicWeather: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </button>
       </header>
       
-      <div className="space-y-6">
+      {/* Scrollable Content Container */}
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pb-40">
         {/* Location Switcher */}
-        <div className="flex p-1.5 bg-slate-100 rounded-2xl">
+        <div className="flex p-1.5 bg-slate-100 rounded-2xl mx-1 shadow-inner">
           {Object.keys(LOCATIONS).map((key) => (
             <button 
               key={key}
@@ -167,7 +170,7 @@ const PublicWeather: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <p className="font-bold text-slate-800">তথ্য লোড হচ্ছে...</p>
           </div>
         ) : weather && (
-          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700">
+          <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700 px-1">
             
             {/* Disaster Alert Box */}
             {isDisaster && (
@@ -219,7 +222,7 @@ const PublicWeather: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                </div>
             </div>
 
-            {/* Coastal & Sunlight Info */}
+            {/* Coastal & Sunlight Info Grid */}
             <div className="grid grid-cols-2 gap-4">
                <div className="bg-white p-5 rounded-[32px] border border-slate-100 shadow-sm text-left space-y-3">
                   <div className="flex items-center gap-2 text-blue-500">
@@ -253,12 +256,12 @@ const PublicWeather: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                </div>
             </div>
 
-            {/* 7 Day Forecast */}
-            <div className="bg-white rounded-[35px] border border-slate-100 shadow-sm overflow-hidden">
-               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+            {/* 7 Day Forecast List */}
+            <div className="bg-white rounded-[35px] border border-slate-100 shadow-sm overflow-hidden mb-10">
+               <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
                   <div className="flex items-center gap-2">
                     <Calendar size={18} className="text-blue-600" />
-                    <h4 className="font-black text-slate-800">৭ দিনের পূর্বাভাস</h4>
+                    <h4 className="font-black text-slate-800 text-sm">৭ দিনের পূর্বাভাস</h4>
                   </div>
                </div>
                <div className="divide-y divide-slate-50">
