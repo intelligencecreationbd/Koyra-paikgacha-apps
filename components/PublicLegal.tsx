@@ -57,15 +57,15 @@ const WhatsAppIcon = ({ size = 20 }: { size?: number }) => (
 const THEME_COLORS = ['#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1'];
 
 const DetailCard: React.FC<{ icon: React.ReactNode; label: string; value: string; colorClass?: string; actions?: React.ReactNode; }> = ({ icon, label, value, colorClass = "bg-slate-50", actions }) => (
-  <div className={`py-2.5 px-4 rounded-[20px] border border-slate-100 flex items-center justify-between shadow-sm ${colorClass}`}>
-    <div className="flex items-center gap-3 text-left overflow-hidden">
-      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0 shadow-sm text-slate-400">{icon}</div>
+  <div className={`py-3 px-4 rounded-[24px] border border-slate-100 flex items-center justify-between shadow-sm ${colorClass}`}>
+    <div className="flex items-center gap-4 text-left overflow-hidden">
+      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shrink-0 shadow-sm text-slate-400">{icon}</div>
       <div className="overflow-hidden">
-        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{label}</p>
-        <p className="text-sm font-bold text-slate-700 leading-tight truncate">{value}</p>
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{label}</p>
+        <p className="text-sm font-bold text-slate-700 leading-tight">{value}</p>
       </div>
     </div>
-    {actions && <div className="flex gap-2 ml-2">{actions}</div>}
+    {actions && <div className="flex gap-2 ml-2 shrink-0">{actions}</div>}
   </div>
 );
 
@@ -108,6 +108,35 @@ const PublicLegal: React.FC<{
   const filteredContacts = useMemo(() => legalData.filter(l => l.categoryId === subId), [legalData, subId]);
   const selectedProfile = useMemo(() => profileIdFromUrl ? legalData.find(item => item.id === profileIdFromUrl) || null : null, [profileIdFromUrl, legalData]);
 
+  // Helper to categorize custom fields
+  const categorizedFields = useMemo(() => {
+    if (!selectedProfile?.customFields) return { mobiles: [], emails: [], assistant: [], others: [] };
+    
+    const mobiles: any[] = [];
+    const emails: any[] = [];
+    const assistant: any[] = [];
+    const others: any[] = [];
+
+    selectedProfile.customFields.forEach(field => {
+      const label = (field.label || '').toLowerCase();
+      // CRITICAL: Check assistant FIRST so that "Assistant Mobile" stays in assistant group
+      if (label.includes('assistant') || label.includes('সহকারী')) {
+        assistant.push(field);
+      } 
+      else if (label.includes('mobile') || label.includes('মোবাইল')) {
+        mobiles.push(field);
+      }
+      else if (label.includes('email') || label.includes('ইমেইল')) {
+        emails.push(field);
+      }
+      else {
+        others.push(field);
+      }
+    });
+
+    return { mobiles, emails, assistant, others };
+  }, [selectedProfile]);
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] animate-in fade-in duration-500">
       <header className="flex items-center justify-between mb-4 shrink-0">
@@ -139,10 +168,85 @@ const PublicLegal: React.FC<{
               <h1 className="text-xl font-black text-slate-800 leading-tight">{selectedProfile.name}</h1>
               <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">{selectedProfile.categoryName}</p>
             </div>
+            
             <div className="w-full space-y-3">
+              {/* Addresses */}
               {selectedProfile.officeAddress && <DetailCard icon={<Building2 size={16} />} label="অফিসের ঠিকানা" value={selectedProfile.officeAddress} colorClass="bg-blue-50/10" />}
               {selectedProfile.homeAddress && <DetailCard icon={<Home size={16} />} label="বাসার ঠিকানা" value={selectedProfile.homeAddress} colorClass="bg-slate-50" />}
-              <DetailCard icon={<Smartphone size={16} />} label="মোবাইল নম্বর" value={selectedProfile.mobile} actions={<><a href={`tel:${convertBnToEn(selectedProfile.mobile)}`} className="p-3 bg-blue-600 text-white rounded-xl"><PhoneCall size={16} /></a><a href={`https://wa.me/${formatWhatsAppNumber(selectedProfile.mobile)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-[#25D366] text-white rounded-xl"><WhatsAppIcon size={16} /></a></>} />
+              
+              {/* Mobile Group - Sequential */}
+              <div className="space-y-3 pt-1">
+                {/* Primary Mobile */}
+                <DetailCard 
+                  icon={<Smartphone size={16} />} 
+                  label="মোবাইল নম্বর" 
+                  value={selectedProfile.mobile} 
+                  actions={
+                    <>
+                      <a href={`tel:${convertBnToEn(selectedProfile.mobile)}`} className="p-3 bg-blue-600 text-white rounded-xl shadow-md active:scale-90 transition-all"><PhoneCall size={16} /></a>
+                      <a href={`https://wa.me/${formatWhatsAppNumber(selectedProfile.mobile)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-[#25D366] text-white rounded-xl shadow-md active:scale-90 transition-all"><WhatsAppIcon size={16} /></a>
+                    </>
+                  } 
+                />
+
+                {/* Extra Mobiles (Mobile 2, Mobile 3 etc.) */}
+                {categorizedFields.mobiles.map((field, idx) => (
+                  <DetailCard 
+                    key={`mob-${idx}`} 
+                    icon={<Smartphone size={16} />} 
+                    label={field.label} 
+                    value={field.value} 
+                    actions={
+                      <>
+                        <a href={`tel:${convertBnToEn(field.value)}`} className="p-3 bg-blue-600 text-white rounded-xl shadow-md active:scale-90 transition-all"><PhoneCall size={16} /></a>
+                        <a href={`https://wa.me/${formatWhatsAppNumber(field.value)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-[#25D366] text-white rounded-xl shadow-md active:scale-90 transition-all"><WhatsAppIcon size={16} /></a>
+                      </>
+                    } 
+                  />
+                ))}
+              </div>
+
+              {/* Email Fields */}
+              {categorizedFields.emails.map((field, idx) => (
+                <DetailCard 
+                  key={`email-${idx}`} 
+                  icon={<Mail size={16} />} 
+                  label={field.label} 
+                  value={field.value} 
+                  actions={<a href={`mailto:${field.value}`} className="p-3 bg-indigo-600 text-white rounded-xl shadow-md active:scale-90 transition-all"><Mail size={16} /></a>}
+                />
+              ))}
+
+              {/* Other Fields (General info before Assistant) */}
+              {categorizedFields.others.map((field, idx) => (
+                <DetailCard key={`other-${idx}`} icon={<Info size={16} />} label={field.label} value={field.value} />
+              ))}
+
+              {/* Assistant Fields - PLACED AT THE VERY END AS REQUESTED */}
+              {categorizedFields.assistant.length > 0 && (
+                <div className="pt-2 space-y-3">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] pl-2 text-left">সহকারীর তথ্য</p>
+                  {categorizedFields.assistant.map((field, idx) => {
+                    const labelText = field.label || '';
+                    const isMobile = labelText.toLowerCase().includes('mobile') || labelText.includes('মোবাইল');
+                    return (
+                      <DetailCard 
+                        key={`asst-${idx}`} 
+                        icon={isMobile ? <Smartphone size={16} /> : <UserCheck size={16} />} 
+                        label={labelText} 
+                        value={field.value} 
+                        colorClass="bg-emerald-50/20"
+                        actions={isMobile ? (
+                          <>
+                            <a href={`tel:${convertBnToEn(field.value)}`} className="p-3 bg-emerald-600 text-white rounded-xl shadow-md active:scale-90 transition-all"><PhoneCall size={16} /></a>
+                            <a href={`https://wa.me/${formatWhatsAppNumber(field.value)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-[#25D366] text-white rounded-xl shadow-md active:scale-90 transition-all"><WhatsAppIcon size={16} /></a>
+                          </>
+                        ) : null}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         ) : !subId ? (

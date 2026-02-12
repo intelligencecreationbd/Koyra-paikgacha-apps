@@ -20,7 +20,10 @@ import {
   UserCheck,
   LayoutGrid,
   Edit2,
-  AlertCircle
+  AlertCircle,
+  Settings,
+  Save,
+  FileText
 } from 'lucide-react';
 
 // Firebase Imports
@@ -71,7 +74,7 @@ const EditField: React.FC<{ label: string; value: string; placeholder?: string; 
 /**
  * @LOCKED_COMPONENT
  * @Section Online Haat Admin Management
- * @Status UI & Logic Updated - Full Edit/Delete for Admin and User Posts
+ * @Status UI & Logic Updated - Includes global terms and conditions editor
  */
 const AdminHaatMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -83,12 +86,14 @@ const AdminHaatMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'admin' | 'user'>('admin');
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
+  const [termsText, setTermsText] = useState('');
 
   const [form, setForm] = useState({
-    name: '', category: '', price: '', unit: 'কেজি', sellerName: '', mobile: '', location: '', description: '', photo: ''
+    name: '', category: '', price: '', offerPrice: '', condition: 'new', unit: 'কেজি', sellerName: '', mobile: '', location: '', description: '', photo: ''
   });
 
   useEffect(() => {
@@ -110,11 +115,28 @@ const AdminHaatMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       }
     });
 
+    // Settings Listener
+    const settingsRef = ref(db, 'online_haat_settings');
+    onValue(settingsRef, snap => {
+      const val = snap.val();
+      if (val && val.terms) setTermsText(val.terms);
+    });
+
     return () => {
       unsubscribeProd();
       unsubscribeCat();
     };
   }, []);
+
+  const handleSaveSettings = async () => {
+    setIsSubmitting(true);
+    try {
+      await set(ref(db, 'online_haat_settings'), { terms: termsText });
+      alert('শর্তাবলী সফলভাবে আপডেট হয়েছে।');
+      setIsSettingsOpen(false);
+    } catch (e) { alert('সেভ করা যায়নি'); }
+    finally { setIsSubmitting(false); }
+  };
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
@@ -168,13 +190,13 @@ const AdminHaatMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           ...form, 
           id, 
           timestamp: new Date().toISOString(),
-          userId: existingProduct?.userId || 'admin' // Keep the original poster's ID
+          userId: existingProduct?.userId || 'admin' 
         };
 
         await set(ref(db, `online_haat/${id}`), finalData);
         setShowForm(false);
         setEditingId(null);
-        setForm({ name: '', category: categories[0]?.id || '', price: '', unit: 'কেজি', sellerName: '', mobile: '', location: '', description: '', photo: '' });
+        setForm({ name: '', category: categories[0]?.id || '', price: '', offerPrice: '', condition: 'new', unit: 'কেজি', sellerName: '', mobile: '', location: '', description: '', photo: '' });
     } catch (e) { alert('সংরক্ষণ ব্যর্থ হয়েছে!'); }
     finally { setIsSubmitting(false); }
   };
@@ -202,6 +224,37 @@ const AdminHaatMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500 text-left pb-20">
         <Header title="অনলাইন হাট ম্যানেজার" onBack={onBack} />
+
+        {/* Global Settings (Terms) */}
+        <div className="bg-white border border-slate-100 rounded-[30px] overflow-hidden shadow-sm">
+            <button onClick={() => setIsSettingsOpen(!isSettingsOpen)} className="w-full flex items-center justify-between p-5 bg-blue-50/50 hover:bg-blue-50 transition-colors">
+                <div className="flex items-center gap-3">
+                   <div className="p-2 bg-blue-100 text-blue-600 rounded-xl"><Settings size={18} /></div>
+                   <h4 className="font-black text-slate-800 text-sm">হাটের শর্তাবলী ম্যানেজ</h4>
+                </div>
+                {isSettingsOpen ? <ChevronUp className="text-slate-400" size={18}/> : <ChevronDown className="text-slate-400" size={18}/>}
+            </button>
+            {isSettingsOpen && (
+              <div className="p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">হাটের সকল পণ্যে প্রদর্শিত হওয়ার শর্তসমূহ</label>
+                   <textarea 
+                      className="w-full p-4 bg-slate-50 border border-slate-100 rounded-3xl font-bold text-slate-700 outline-none focus:border-blue-400 min-h-[150px] text-sm"
+                      placeholder="এখানে শর্তাবলী লিখুন..."
+                      value={termsText}
+                      onChange={e => setTermsText(e.target.value)}
+                   />
+                </div>
+                <button 
+                   onClick={handleSaveSettings}
+                   disabled={isSubmitting}
+                   className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+                >
+                  {isSubmitting ? <Loader2 size={18} className="animate-spin"/> : <><Save size={18}/> শর্তাবলী সেভ করুন</>}
+                </button>
+              </div>
+            )}
+        </div>
 
         {/* Category Management Section */}
         <div className="bg-white border border-slate-100 rounded-[30px] overflow-hidden shadow-sm">
@@ -267,7 +320,7 @@ const AdminHaatMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <button 
               onClick={() => { 
                 setEditingId(null); 
-                setForm({name:'', category: categories[0]?.id || '', price:'', unit:'কেজি', sellerName:'এডমিন', mobile:'', location:'কয়রা-পাইকগাছা', description:'', photo:''}); 
+                setForm({name:'', category: categories[0]?.id || '', price:'', offerPrice: '', condition: 'new', unit:'কেজি', sellerName:'এডমিন', mobile:'', location:'কয়রা-পাইকগাছা', description:'', photo:''}); 
                 setShowForm(true); 
               }}
               className="w-full py-5 bg-[#F1C40F] text-slate-900 font-black rounded-[28px] shadow-xl flex items-center justify-center gap-3 active:scale-95 transition-all"
@@ -316,7 +369,16 @@ const AdminHaatMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                <Store size={10} className="text-slate-300" />
                                <p className="text-[10px] font-black text-slate-600 truncate">{p.sellerName || 'অজানা বিক্রেতা'}</p>
                             </div>
-                            <p className="text-[10px] font-black text-orange-600">৳ {toBn(p.price)} / {p.unit || 'কেজি'}</p>
+                            <div className="flex flex-col">
+                              {p.offerPrice ? (
+                                <>
+                                  <p className="text-[10px] font-black text-emerald-600">৳ {toBn(p.offerPrice)}</p>
+                                  <p className="text-[8px] font-bold text-slate-400 line-through">৳ {toBn(p.price)}</p>
+                                </>
+                              ) : (
+                                <p className="text-[10px] font-black text-orange-600">৳ {toBn(p.price)}</p>
+                              )}
+                            </div>
                         </div>
                         <div className="flex gap-2 shrink-0">
                             <button 
@@ -387,12 +449,34 @@ const AdminHaatMgmt: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             </div>
                         </div>
 
+                        {/* Product Condition Selection */}
+                        <div className="text-left">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 mb-1.5 block">পণ্যের কন্ডিশন *</label>
+                            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl">
+                                <button 
+                                  type="button"
+                                  onClick={() => setForm({...form, condition: 'new'})}
+                                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${form.condition === 'new' ? 'bg-white shadow-md text-emerald-600' : 'text-slate-400'}`}
+                                >
+                                  নতুন
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={() => setForm({...form, condition: 'used'})}
+                                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${form.condition === 'used' ? 'bg-white shadow-md text-orange-600' : 'text-slate-400'}`}
+                                >
+                                  পুরাতন
+                                </button>
+                            </div>
+                        </div>
+
                         <EditField label="পণ্যের নাম *" value={form.name} onChange={v=>setForm({...form, name:v})} placeholder="যেমন: দেশি মুরগী" icon={<ShoppingBasket size={18}/>} />
                         
                         <div className="grid grid-cols-2 gap-3">
                             <EditField label="মূল্য (৳) *" value={form.price} onChange={v=>setForm({...form, price:v})} placeholder="৳ ০০" type="number" />
-                            <EditField label="একক (যেমন: কেজি) *" value={form.unit} onChange={v=>setForm({...form, unit:v})} placeholder="কেজি / হালি" />
+                            <EditField label="অফার মূল্য (৳)" value={form.offerPrice} onChange={v=>setForm({...form, offerPrice:v})} placeholder="৳ ০০" type="number" />
                         </div>
+                        <EditField label="একক (যেমন: কেজি) *" value={form.unit} onChange={v=>setForm({...form, unit:v})} placeholder="কেজি / হালি" icon={<Tag size={16}/>} />
 
                         <div className="p-4 bg-blue-50/50 rounded-[30px] border border-blue-100 space-y-4">
                            <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] pl-1">বিক্রেতার তথ্য</p>
