@@ -22,7 +22,8 @@ import {
   UserCheck,
   MessagesSquare,
   UserCircle,
-  Calculator
+  Calculator,
+  Headset
 } from 'lucide-react';
 import { MainMenu } from './types';
 
@@ -34,7 +35,7 @@ import { MainMenu } from './types';
  * 7. Online Haat, 8. Local News, 9. Legal Services
  * 10. KP Chat, 11. Medical Service, 12. My Profile
  * Page 2:
- * 13. Age Calculator
+ * 13. Age Calculator, 14. Help Line
  */
 export const CATEGORIES: MainMenu[] = [
   {
@@ -170,6 +171,13 @@ export const CATEGORIES: MainMenu[] = [
     subMenus: []
   },
   {
+    id: '20',
+    name: 'হেল্প লাইন',
+    icon: 'Headset',
+    color: '#EC4899',
+    subMenus: []
+  },
+  {
     id: '12',
     name: 'ইউজার লগইন',
     icon: 'LogIn',
@@ -200,5 +208,6 @@ export const ICON_MAP: Record<string, any> = {
   UserCheck,
   MessagesSquare,
   UserCircle,
-  Calculator
+  Calculator,
+  Headset
 };

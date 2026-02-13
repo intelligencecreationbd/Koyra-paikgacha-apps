@@ -201,6 +201,7 @@ const App = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isLanding = location.pathname === '/';
+  const isChatPage = location.pathname === '/chat';
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -394,16 +395,26 @@ const App = () => {
               </div>
               <div className="flex flex-col items-center">
                 <div className="flex items-baseline gap-1.5">
-                  <h1 className="font-black text-2xl tracking-tight text-white leading-none drop-shadow-sm">কয়রা-পাইকগাছা</h1>
-                  <span className="text-[10px] font-black whitespace-nowrap animate-rainbow-text">কমিউনিটি এপস</span>
+                  <h1 className="font-black text-2xl tracking-tight text-white leading-none drop-shadow-sm">
+                    {isChatPage ? 'কেপি চ্যাট' : 'কয়রা-পাইকগাছা'}
+                  </h1>
+                  {!isChatPage && (
+                    <span className="text-[10px] font-black whitespace-nowrap animate-rainbow-text">কমিউনিটি এপস</span>
+                  )}
                 </div>
                 <div className="relative h-4 flex items-center justify-center mt-1.5 overflow-hidden w-full">
-                  <span 
-                    key={subtitleIndex}
-                    className="text-[10px] font-black tracking-wider uppercase whitespace-nowrap animate-rainbow-text animate-in fade-in zoom-in duration-500"
-                  >
-                    {subtitles[subtitleIndex]}
-                  </span>
+                  {isChatPage ? (
+                    <span className="text-[10px] font-black tracking-wider uppercase whitespace-nowrap text-blue-100">
+                      কয়রা-পাইকগাছা কমিউনিটি এপস
+                    </span>
+                  ) : (
+                    <span 
+                      key={subtitleIndex}
+                      className="text-[10px] font-black tracking-wider uppercase whitespace-nowrap animate-rainbow-text animate-in fade-in zoom-in duration-500"
+                    >
+                      {subtitles[subtitleIndex]}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1">
