@@ -104,7 +104,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const queryParams = new URLSearchParams(location.search);
   const targetAction = queryParams.get('to');
   
-  // CRITICAL: Initialize synchronously to avoid flickering
   const [loggedInUser, setLoggedInUser] = useState<any | null>(() => {
     const saved = localStorage.getItem('kp_logged_in_user');
     return saved ? JSON.parse(saved) : null;
@@ -118,6 +117,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileEditForm, setProfileEditForm] = useState({ fullName: '', village: '', photoURL: '' });
@@ -151,6 +151,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
     const cleanMobile = convertToEn(loginData.mobile);
     
     if (!cleanMobile || !loginData.password) {
@@ -177,6 +178,15 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       }
 
       const userCredential = await signInWithEmailAndPassword(auth, userData.email, loginData.password);
+      
+      // Mandatory Email Verification Check
+      if (!userCredential.user.emailVerified) {
+        await signOut(auth);
+        setErrorMsg('আপনার ইমেইলটি এখনও ভেরিফাই করা হয়নি। অনুগ্রহ করে আপনার ইমেইল চেক করে ভেরিফিকেশন লিঙ্কটি ক্লিক করুন।');
+        setIsSubmitting(false);
+        return;
+      }
+
       const finalUser = { ...userData, uid: userCredential.user.uid, password: loginData.password };
       
       setLoggedInUser(finalUser);
@@ -203,6 +213,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
     const cleanMobile = convertToEn(regData.mobile);
     const { fullName, email, dob, village, password, confirmPassword } = regData;
 
@@ -226,6 +237,10 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       }
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Send Email Verification Link
+      await sendEmailVerification(userCredential.user);
+
       const memberId = `KP${Date.now().toString().slice(-8)}`;
       const userData = {
         uid: userCredential.user.uid,
@@ -241,10 +256,14 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       };
       
       await setDoc(doc(dbFs, "users", userCredential.user.uid), userData);
-      setLoggedInUser(userData);
-      localStorage.setItem('kp_logged_in_user', JSON.stringify(userData));
-      onLogin(userData as any);
-      setMode('profile');
+      
+      // CRITICAL: Force Sign Out after registration until they verify email
+      await signOut(auth);
+      
+      setSuccessMsg('নিবন্ধন সফল হয়েছে! আপনার ইমেইলে একটি ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে। অনুগ্রহ করে ইমেইলটি যাচাই করে লগইন করুন।');
+      setMode('login');
+      setRegData({ fullName: '', email: '', mobile: '', dob: '', village: '', password: '', confirmPassword: '' });
+      
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
           setErrorMsg('এই ইমেইলটি ইতিমধ্যে ব্যবহৃত হয়েছে।');
@@ -254,6 +273,29 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
           setErrorMsg('নিবন্ধন ব্যর্থ হয়েছে। অন্য ইমেইল ব্যবহার করে চেষ্টা করুন।');
       }
     } finally { setIsSubmitting(false); }
+  };
+
+  const handleResetPassword = async () => {
+    setErrorMsg('');
+    setSuccessMsg('');
+    if (!regData.email) {
+      setErrorMsg('অনুগ্রহ করে আপনার একাউন্টের ইমেইল এড্রেসটি দিন।');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await sendPasswordResetEmail(auth, regData.email);
+      setSuccessMsg('পাসওয়ার্ড রিসেট করার লিঙ্কটি আপনার ইমেইলে পাঠানো হয়েছে। অনুগ্রহ করে ইনবক্স বা স্প্যাম ফোল্ডার চেক করুন।');
+      setMode('login');
+    } catch (err: any) {
+      if (err.code === 'auth/user-not-found') {
+        setErrorMsg('এই ইমেইল দিয়ে কোনো একাউন্ট পাওয়া যায়নি।');
+      } else {
+        setErrorMsg('রিসেট লিঙ্ক পাঠাতে সমস্যা হয়েছে। সঠিক ইমেইল দিয়েছেন কিনা নিশ্চিত করুন।');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -297,7 +339,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
     <div className="p-5 pb-32 animate-in fade-in duration-500 min-h-screen bg-white">
       {mode === 'profile' && loggedInUser ? (
         <div className="w-full max-w-sm mx-auto animate-in slide-in-from-bottom-4 duration-700">
-            {/* Header (matches request screenshot) */}
             <div className="flex items-center justify-between mb-8 px-1 pt-2">
                 <button 
                     onClick={() => {
@@ -308,9 +349,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                 >
                     <Edit2 size={13} /> এডিট
                 </button>
-                
                 <h2 className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] flex-1 text-center">আমার ড্যাশবোর্ড</h2>
-                
                 <button 
                   onClick={handleLogout} 
                   className="flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 rounded-xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
@@ -319,13 +358,11 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                 </button>
             </div>
 
-            {/* Profile Info Card Row (matches screenshot) */}
             <div className="flex items-center gap-5 bg-[#F8FAFC]/60 p-6 rounded-[35px] border border-slate-50 shadow-sm mb-10 text-left">
                 <div className="relative shrink-0">
                     <div className="w-16 h-16 rounded-[22px] border-[3px] border-white shadow-md overflow-hidden bg-slate-100 flex items-center justify-center text-slate-200">
                         {loggedInUser.photoURL ? <img src={loggedInUser.photoURL} className="w-full h-full object-cover" /> : <UserCircle size={45} />}
                     </div>
-                    {/* Blue Verified Shield on picture bottom right */}
                     <div className="absolute -bottom-1 -right-1 p-1 bg-blue-600 text-white rounded-full shadow-lg border-[3px] border-white">
                        <ShieldCheck size={12} fill="currentColor" className="text-white" />
                     </div>
@@ -333,7 +370,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                 <div className="overflow-hidden">
                     <div className="flex items-center gap-1.5 overflow-hidden">
                         <h1 className="text-xl font-black text-slate-800 leading-tight truncate">{loggedInUser.fullName}</h1>
-                        {/* Blue check next to name */}
                         {loggedInUser.isVerified && (
                           <div className="bg-white rounded-full flex items-center justify-center shrink-0">
                              <CheckCircle2 size={16} fill="#1877F2" className="text-white shrink-0" />
@@ -344,55 +380,23 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                 </div>
             </div>
 
-            {/* Dashboard Menu List (Restricted to exactly 3 items as requested) */}
             <div className="space-y-4">
-                {/* ডিজিটাল খাতা */}
-                <button 
-                    onClick={() => navigate('/ledger')} 
-                    className="w-full p-6 bg-[#0056b3] text-white rounded-[35px] flex items-center gap-5 shadow-xl active:scale-95 transition-all text-left overflow-hidden relative group"
-                >
-                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center relative z-10 shrink-0 shadow-inner group-hover:bg-white/30 transition-colors">
-                        <Wallet size={28}/>
-                    </div>
-                    <div className="relative z-10 flex-1">
-                        <p className="font-black text-base uppercase tracking-[0.1em]">ডিজিটাল খাতা</p>
-                        <p className="text-[11px] font-bold opacity-70 mt-1">লেনদেনের হিসাব রাখুন</p>
-                    </div>
+                <button onClick={() => navigate('/ledger')} className="w-full p-6 bg-[#0056b3] text-white rounded-[35px] flex items-center gap-5 shadow-xl active:scale-95 transition-all text-left overflow-hidden relative group">
+                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:bg-white/30 transition-colors"><Wallet size={28}/></div>
+                    <div className="flex-1"><p className="font-black text-base uppercase tracking-[0.1em]">ডিজিটাল খাতা</p><p className="text-[11px] font-bold opacity-70 mt-1">লেনদেনের হিসাব রাখুন</p></div>
                     <ChevronRight className="opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" size={24} />
                 </button>
-                
-                {/* আমার পন্য */}
-                <button 
-                    onClick={() => navigate('/online-haat')} 
-                    className="w-full p-6 bg-[#10B981] text-white rounded-[35px] flex items-center gap-5 shadow-xl active:scale-95 transition-all text-left overflow-hidden relative group"
-                >
-                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center relative z-10 shrink-0 shadow-inner group-hover:bg-white/30 transition-colors">
-                        <ShoppingBasket size={28}/>
-                    </div>
-                    <div className="relative z-10 flex-1">
-                        <p className="font-black text-base uppercase tracking-[0.1em]">আমার পন্য</p>
-                        <p className="text-[11px] font-bold opacity-70 mt-1">আপনার বিজ্ঞাপনের লিস্ট</p>
-                    </div>
+                <button onClick={() => navigate('/online-haat')} className="w-full p-6 bg-[#10B981] text-white rounded-[35px] flex items-center gap-5 shadow-xl active:scale-95 transition-all text-left overflow-hidden relative group">
+                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:bg-white/30 transition-colors"><ShoppingBasket size={28}/></div>
+                    <div className="flex-1"><p className="font-black text-base uppercase tracking-[0.1em]">আমার পন্য</p><p className="text-[11px] font-bold opacity-70 mt-1">আপনার বিজ্ঞাপনের লিস্ট</p></div>
                     <ChevronRight className="opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" size={24} />
                 </button>
-
-                {/* আমার সংবাদ */}
-                <button 
-                    onClick={() => navigate('/category/14')} 
-                    className="w-full p-6 bg-[#3B82F6] text-white rounded-[35px] flex items-center gap-5 shadow-xl active:scale-95 transition-all text-left overflow-hidden relative group"
-                >
-                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center relative z-10 shrink-0 shadow-inner group-hover:bg-white/30 transition-colors">
-                        <Newspaper size={28}/>
-                    </div>
-                    <div className="relative z-10 flex-1">
-                        <p className="font-black text-base uppercase tracking-[0.1em]">আমার সংবাদ</p>
-                        <p className="text-[11px] font-bold opacity-70 mt-1">পাঠানো সংবাদের স্ট্যাটাস</p>
-                    </div>
+                <button onClick={() => navigate('/category/14')} className="w-full p-6 bg-[#3B82F6] text-white rounded-[35px] flex items-center gap-5 shadow-xl active:scale-95 transition-all text-left overflow-hidden relative group">
+                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:bg-white/30 transition-colors"><Newspaper size={28}/></div>
+                    <div className="flex-1"><p className="font-black text-base uppercase tracking-[0.1em]">আমার সংবাদ</p><p className="text-[11px] font-bold opacity-70 mt-1">পাঠানো সংবাদের স্ট্যাটাস</p></div>
                     <ChevronRight className="opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" size={24} />
                 </button>
             </div>
-            
-            {/* Action Indicators matching screenshot circles at bottom */}
             <div className="mt-20 flex justify-center items-center gap-6 opacity-80 pointer-events-none">
                 <div className="w-12 h-12 rounded-full border-2 border-slate-100 flex items-center justify-center text-slate-300"><Plus size={20}/></div>
                 <div className="px-6 py-2 rounded-full border-2 border-slate-100 font-black text-[10px] text-slate-300 uppercase">BACK</div>
@@ -401,7 +405,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         </div>
       ) : (
         <div className="w-full max-w-sm mx-auto animate-in fade-in duration-500">
-          {/* Auth Screen Header Area */}
           <div className="text-center py-6">
             <h2 className="text-3xl font-black text-[#1A1A1A] tracking-tight">
               {mode === 'login' ? 'ইউজার লগইন' : mode === 'register' ? 'সদস্য নিবন্ধন' : 'পাসওয়ার্ড রিসেট'}
@@ -409,60 +412,48 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
           </div>
 
           <div className="bg-white p-8 rounded-[45px] shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-slate-50 space-y-8">
-            {/* Tabs (Stays faded in forgot mode as per screenshot) */}
             <div className="flex p-1.5 bg-slate-100 rounded-2xl">
               <button 
-                onClick={() => { setMode('login'); setErrorMsg(''); }} 
+                onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} 
                 className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${mode === 'login' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}
               >
                 লগইন
               </button>
               <button 
-                onClick={() => { setMode('register'); setErrorMsg(''); }} 
+                onClick={() => { setMode('register'); setErrorMsg(''); setSuccessMsg(''); }} 
                 className={`flex-1 py-3.5 rounded-xl font-black text-sm transition-all ${mode === 'register' ? 'bg-white shadow-md text-[#0056b3]' : 'text-slate-400'}`}
               >
                 নিবন্ধন
               </button>
             </div>
 
+            {/* Notification Messages */}
+            {errorMsg && (
+                <div className="p-4 bg-red-50 border border-red-100 rounded-2xl animate-in shake duration-300">
+                    <p className="text-red-600 text-xs font-bold text-center leading-relaxed">{errorMsg}</p>
+                </div>
+            )}
+            {successMsg && (
+                <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl animate-in zoom-in duration-300">
+                    <p className="text-emerald-600 text-xs font-bold text-center leading-relaxed">{successMsg}</p>
+                </div>
+            )}
+
             {mode === 'login' ? (
               <form onSubmit={handleLogin} className="space-y-6">
-                <Field 
-                  label="মোবাইল নম্বর" 
-                  value={loginData.mobile} 
-                  placeholder="০১xxxxxxxxx" 
-                  onChange={v => setLoginData({...loginData, mobile: v})} 
-                  icon={<Smartphone size={18}/>} 
-                />
+                <Field label="মোবাইল নম্বর" value={loginData.mobile} placeholder="০১xxxxxxxxx" onChange={v => setLoginData({...loginData, mobile: v})} icon={<Smartphone size={18}/>} />
                 <div className="space-y-2">
                   <div className="relative">
-                    <Field 
-                      label="পাসওয়ার্ড" 
-                      type={showPassword ? 'text' : 'password'} 
-                      value={loginData.password} 
-                      placeholder="******" 
-                      onChange={v => setLoginData({...loginData, password: v})} 
-                      icon={<Lock size={18}/>} 
-                    />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-10 text-slate-300 p-2">
-                      {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
-                    </button>
+                    <Field label="পাসওয়ার্ড" type={showPassword ? 'text' : 'password'} value={loginData.password} placeholder="******" onChange={v => setLoginData({...loginData, password: v})} icon={<Lock size={18}/>} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-10 text-slate-300 p-2">{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button>
                   </div>
                   <div className="text-right pr-1">
-                    <button type="button" onClick={() => setMode('forgot')} className="text-[11px] font-black text-blue-500 uppercase tracking-widest hover:underline">পাসওয়ার্ড ভুলে গেছেন?</button>
+                    <button type="button" onClick={() => { setMode('forgot'); setErrorMsg(''); setSuccessMsg(''); }} className="text-[11px] font-black text-blue-500 uppercase tracking-widest hover:underline">পাসওয়ার্ড ভুলে গেছেন?</button>
                   </div>
                 </div>
-                <button 
-                  disabled={isSubmitting} 
-                  className="w-full py-5 bg-[#0056b3] text-white font-black rounded-[25px] shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
+                <button disabled={isSubmitting} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-[25px] shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
                     {isSubmitting ? <Loader2 className="animate-spin" /> : 'প্রবেশ করুন'}
                 </button>
-                {errorMsg && (
-                   <div className="p-3 bg-red-50 rounded-xl border border-red-100 animate-pulse">
-                      <p className="text-red-500 text-[11px] font-bold text-center">{errorMsg}</p>
-                   </div>
-                )}
               </form>
             ) : mode === 'register' ? (
               <form onSubmit={handleRegister} className="space-y-4">
@@ -478,41 +469,22 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                 <button disabled={isSubmitting} className="w-full py-5 bg-[#0056b3] text-white font-black rounded-[25px] shadow-xl active:scale-95 transition-all mt-4">
                   {isSubmitting ? <Loader2 className="animate-spin" /> : 'নিবন্ধন করুন'}
                 </button>
-                {errorMsg && <p className="text-red-500 text-[11px] font-bold text-center mt-2">{errorMsg}</p>}
               </form>
             ) : (
               <div className="space-y-8 animate-in zoom-in duration-300">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[28px] flex items-center justify-center shadow-inner group">
-                    <Key size={36} className="group-hover:rotate-12 transition-transform duration-300" />
-                  </div>
-                  <p className="text-xs font-bold text-slate-400 text-center px-4 leading-relaxed">
-                    আপনার একাউন্টের ইমেইল দিন। আমরা পাসওয়ার্ড রিসেট লিঙ্ক পাঠাবো।
-                  </p>
+                  <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[28px] flex items-center justify-center shadow-inner group"><Key size={36} className="group-hover:rotate-12 transition-transform duration-300" /></div>
+                  <p className="text-xs font-bold text-slate-400 text-center px-4 leading-relaxed">আপনার একাউন্টের ইমেইল দিন। আমরা পাসওয়ার্ড রিসেট লিঙ্ক পাঠাবো।</p>
                 </div>
-                
-                <Field 
-                  label="ইমেইল এড্রেস" 
-                  value={regData.email} 
-                  type="email" 
-                  placeholder="example@gmail.com" 
-                  onChange={v => setRegData({...regData, email: v})} 
-                  icon={<Mail size={18}/>} 
-                />
-                
+                <Field label="ইমেইল এড্রেস" value={regData.email} type="email" placeholder="example@gmail.com" onChange={v => setRegData({...regData, email: v})} icon={<Mail size={18}/>} />
                 <button 
-                  onClick={() => alert('লিঙ্ক পাঠানো হয়েছে!')} 
-                  className="w-full py-5 bg-[#0056b3] text-white font-black rounded-[22px] shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+                  onClick={handleResetPassword} 
+                  disabled={isSubmitting}
+                  className="w-full py-5 bg-[#0056b3] text-white font-black rounded-[22px] shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  লিঙ্ক পাঠান
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : 'লিঙ্ক পাঠান'}
                 </button>
-                
-                <button 
-                  onClick={() => setMode('login')} 
-                  className="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:text-blue-500 transition-colors"
-                >
-                  <ChevronLeft size={16}/> লগইনে ফিরে যান
-                </button>
+                <button onClick={() => { setMode('login'); setErrorMsg(''); setSuccessMsg(''); }} className="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:text-blue-500 transition-colors"><ChevronLeft size={16}/> লগইনে ফিরে যান</button>
               </div>
             )}
           </div>
