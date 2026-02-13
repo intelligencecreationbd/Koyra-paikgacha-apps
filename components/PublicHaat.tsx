@@ -77,7 +77,7 @@ interface Product {
   description?: string; 
   timestamp: string; 
   userId?: string;
-  isVerified?: boolean; // Temporary field for display
+  isVerified?: boolean; 
 }
 
 const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
@@ -95,29 +95,30 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   useEffect(() => {
     setLoading(true);
-    // Listen for products
     onValue(ref(db, 'online_haat'), snap => {
       const val = snap.val();
       setProducts(val ? Object.keys(val).map(k => ({ ...val[k], id: k })).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()) : []);
       setLoading(false);
     });
-    // Listen for categories
     onValue(ref(db, 'online_haat_categories'), snap => {
       const val = snap.val();
       setCategories(val ? Object.keys(val).map(k => ({ id: k, name: val[k].name })) : []);
     });
-    // Listen for global terms
     onValue(ref(db, 'online_haat_settings/terms'), snap => {
       setGlobalTerms(snap.val() || 'এখনও কোনো শর্তাবলী যোগ করা হয়নি।');
     });
 
-    // Fetch all users to match verification status
     const fetchUsers = async () => {
         const snap = await getDocs(collection(dbFs, "users"));
         setAllUsers(snap.docs.map(doc => doc.data()));
     };
     fetchUsers();
   }, []);
+
+  const getProductWithVerified = (p: Product) => {
+    const user = allUsers.find(u => u.memberId === p.userId);
+    return { ...p, isVerified: user?.isVerified || false };
+  };
 
   const filteredProducts = useMemo(() => {
     let list = products.filter(p => (activeCategory === 'all' || p.category === activeCategory));
@@ -132,11 +133,6 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       (p.sellerName || '').toLowerCase().includes(term)
     );
   }, [products, activeCategory, searchTerm, filterSeller]);
-
-  const getProductWithVerified = (p: Product) => {
-    const user = allUsers.find(u => u.memberId === p.userId);
-    return { ...p, isVerified: user?.isVerified || false };
-  };
 
   const handleAddProductClick = () => {
     const savedUser = localStorage.getItem('kp_logged_in_user');
@@ -275,33 +271,45 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                    ))}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                   {filteredProducts.map((p) => (
-                     <button key={p.id} onClick={() => setSelectedProduct(p)} className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden flex flex-col group active:scale-95 transition-all text-left">
-                        <div className="aspect-square relative overflow-hidden bg-slate-50">
-                           {p.photo ? (
-                             <img src={p.photo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} />
-                           ) : (
-                             <div className="w-full h-full flex items-center justify-center text-slate-200">
-                               <ShoppingBasket size={48} />
+                   {filteredProducts.map((p) => {
+                     const productData = getProductWithVerified(p);
+                     return (
+                       <button key={p.id} onClick={() => setSelectedProduct(p)} className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden flex flex-col group active:scale-95 transition-all text-left">
+                          <div className="aspect-square relative overflow-hidden bg-slate-50">
+                             {p.photo ? (
+                               <img src={p.photo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={p.name} />
+                             ) : (
+                               <div className="w-full h-full flex items-center justify-center text-slate-200">
+                                 <ShoppingBasket size={48} />
+                               </div>
+                             )}
+                             <div className="absolute top-2 left-2 px-2.5 py-0.5 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-blue-600 uppercase tracking-widest shadow-sm">
+                               {categories.find(c => c.id === p.category)?.name || 'পণ্য'}
                              </div>
-                           )}
-                           <div className="absolute top-2 left-2 px-2.5 py-0.5 bg-white/90 backdrop-blur-sm rounded-lg text-[8px] font-black text-blue-600 uppercase tracking-widest shadow-sm">
-                             {categories.find(c => c.id === p.category)?.name || 'পণ্য'}
-                           </div>
-                        </div>
-                        <div className="p-4 space-y-1.5">
-                           <h4 className="font-black text-slate-800 text-sm truncate">{p.name}</h4>
-                           <div className="flex items-center gap-1.5">
-                              <p className="font-black text-blue-600 text-xs truncate">৳ {toBn(p.offerPrice || p.price)}</p>
-                              {p.offerPrice && <p className="text-[8px] font-bold text-slate-400 line-through opacity-60">৳ {toBn(p.price)}</p>}
-                           </div>
-                           <div className="flex items-center gap-1 opacity-50 overflow-hidden">
-                              <MapPin size={8} />
-                              <p className="text-[8px] font-bold truncate uppercase">{p.location}</p>
-                           </div>
-                        </div>
-                     </button>
-                   ))}
+                          </div>
+                          <div className="p-4 space-y-1.5">
+                             <div className="flex items-center gap-1 overflow-hidden">
+                                <h4 className="font-black text-slate-800 text-sm truncate flex-1">{p.name}</h4>
+                             </div>
+                             <div className="flex items-center gap-1 overflow-hidden">
+                                <Store size={10} className="text-slate-300 shrink-0" />
+                                <p className="text-[9px] font-black text-slate-600 truncate flex-1">{p.sellerName}</p>
+                                {productData.isVerified && (
+                                   <CheckCircle2 size={11} fill="#1877F2" className="text-white shrink-0" />
+                                )}
+                             </div>
+                             <div className="flex items-center gap-1.5">
+                                <p className="font-black text-blue-600 text-xs truncate">৳ {toBn(p.offerPrice || p.price)}</p>
+                                {p.offerPrice && <p className="text-[8px] font-bold text-slate-400 line-through opacity-60">৳ {toBn(p.price)}</p>}
+                             </div>
+                             <div className="flex items-center gap-1 opacity-50 overflow-hidden">
+                                <MapPin size={8} />
+                                <p className="text-[8px] font-bold truncate uppercase">{p.location}</p>
+                             </div>
+                          </div>
+                       </button>
+                     );
+                   })}
                 </div>
             </div>
           )}
@@ -310,5 +318,4 @@ const PublicHaat: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   );
 };
 
-// Fix: Added missing default export
 export default PublicHaat;

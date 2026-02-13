@@ -28,13 +28,16 @@ import {
   ThumbsDown,
   Heart,
   Angry,
-  MessageSquare
+  MessageSquare,
+  MapPin,
+  UserCircle
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Firebase Imports
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getDatabase, ref, onValue, set, push, update, increment, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
@@ -48,6 +51,7 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(app);
+const dbFs = getFirestore(app);
 
 const toBn = (num: string | number) => 
   (num || '').toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
@@ -72,7 +76,7 @@ const EditField = ({ label, value, placeholder, onChange, icon, type = 'text', r
 /**
  * @LOCKED_COMPONENT
  * @Section Public Local News Service View
- * @Status Design Updated - news submission button visibility fixed with animation
+ * @Status UI Finalized - Global Scaling Optimized.
  */
 export default function PublicNews({ onBack }: { onBack: () => void }) {
   const navigate = useNavigate();
@@ -82,6 +86,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
 
   const [newsList, setNewsList] = useState<any[]>([]);
   const [breakingNews, setBreakingNews] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [selectedNews, setSelectedNews] = useState<any | null>(null);
@@ -146,7 +151,10 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
     
     syncUser();
 
-    // Fetch News Categories
+    const unsubscribeUsers = onSnapshot(collection(dbFs, 'users'), (snap) => {
+        setAllUsers(snap.docs.map(doc => doc.data()));
+    });
+
     const catRef = ref(db, 'news_categories');
     onValue(catRef, snap => {
       const val = snap.val();
@@ -173,6 +181,8 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
 
     const saved = localStorage.getItem('kp_saved_news');
     if (saved) setSavedNewsIds(JSON.parse(saved));
+
+    return () => unsubscribeUsers();
   }, []);
 
   useEffect(() => {
@@ -197,6 +207,18 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
         };
     }
   }, [selectedNews]);
+
+  const getReporterData = (news: any) => {
+    if (!news.userId) return { name: news.reporter || 'নিজস্ব প্রতিবেদক', isVerified: false, village: '', photoURL: '' };
+    const user = allUsers.find(u => u.memberId === news.userId);
+    if (!user) return { name: news.reporter || 'ইউজার', isVerified: false, village: '', photoURL: '' };
+    return {
+        name: user.fullName,
+        isVerified: !!user.isVerified,
+        village: user.village || '',
+        photoURL: user.photoURL || ''
+    };
+  };
 
   const handleInteraction = async (type: 'likes' | 'dislikes' | 'loves' | 'angrys') => {
     if (!selectedNews) return;
@@ -320,14 +342,14 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
 
   if (showSubmitForm) {
     return (
-        <div className="bg-white min-h-screen animate-in slide-in-from-right-4 duration-500 p-5 pb-20 overflow-y-auto">
+        <div className="bg-white min-h-full animate-in slide-in-from-right-4 duration-500 p-5 pb-32 overflow-y-auto no-scrollbar">
              <div className="flex items-center gap-4 mb-6">
-                <button onClick={() => setShowSubmitForm(false)} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all">
+                <button onClick={() => setShowSubmitForm(false)} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all shrink-0">
                   <ChevronLeft size={20} className="text-slate-800" />
                 </button>
-                <div className="text-left">
-                    <h2 className="text-xl font-black text-slate-800 tracking-tight leading-none">সংবাদ পাঠান</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-widest">আপনার চারপাশের খবর দিন</p>
+                <div className="text-left overflow-hidden">
+                    <h2 className="text-xl font-black text-slate-800 tracking-tight leading-none truncate">সংবাদ পাঠান</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-widest truncate">আপনার চারপাশের খবর দিন</p>
                 </div>
             </div>
             <div className="bg-white p-6 rounded-[40px] border border-slate-100 shadow-xl space-y-6">
@@ -374,13 +396,14 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
 
   if (selectedNews) {
     const relatedNews = newsList.filter(n => n.id !== selectedNews.id).slice(0, 3);
+    const reporterData = getReporterData(selectedNews);
     return (
-      <div className="bg-white min-h-screen animate-in fade-in duration-500 pb-20">
+      <div className="bg-white min-h-full animate-in fade-in duration-500 pb-40 overflow-y-auto no-scrollbar">
         <header className="flex items-center justify-between sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 h-16 shadow-sm">
-          <button onClick={() => setSelectedNews(null)} className="p-2 -ml-2 text-slate-800 active:scale-90 transition-all">
+          <button onClick={() => setSelectedNews(null)} className="p-2 -ml-2 text-slate-800 active:scale-90 transition-all shrink-0">
             <ChevronLeft size={28} />
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
              <div className="flex bg-slate-100 rounded-full p-1 border border-slate-200">
                 <button onClick={() => setFontSize(prev => Math.max(14, prev - 2))} className="p-1.5 text-slate-500 hover:text-blue-600"><Minus size={16}/></button>
                 <div className="px-2 flex items-center justify-center border-x border-slate-200"><span className="text-[10px] font-black text-slate-400">A</span></div>
@@ -395,23 +418,35 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
           <div className="space-y-4">
              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-md">নিউজ</span>
-                    <span className="text-[11px] font-bold text-slate-400">• {toBn(selectedNews.date || 'আজ')}</span>
+                    <span className="px-3 py-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-md shrink-0">নিউজ</span>
+                    <span className="text-[11px] font-bold text-slate-400 truncate">• {toBn(selectedNews.date || 'আজ')}</span>
                 </div>
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{categories.find(c=>c.id===selectedNews.category)?.name || 'সাধারণ'}</span>
+                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest truncate">{categories.find(c=>c.id===selectedNews.category)?.name || 'সাধারণ'}</span>
              </div>
              <h1 className="text-3xl font-black text-slate-900 leading-[1.3] tracking-tight">{selectedNews.title}</h1>
              <div className="flex items-center justify-between pt-4 border-y border-slate-50 py-4">
-                <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500">
-                      <User size={20} />
+                <div className="flex items-center gap-3 text-left overflow-hidden">
+                   <div className="w-11 h-11 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 shrink-0 overflow-hidden shadow-inner">
+                      {reporterData.photoURL ? (
+                          <img src={reporterData.photoURL} className="w-full h-full object-cover" alt="Reporter" />
+                      ) : (
+                          <User size={22} />
+                      )}
                    </div>
-                   <div className="flex flex-col text-left">
-                      <p className="text-sm font-black text-slate-800">{selectedNews.reporter || 'নিজস্ব প্রতিবেদক'}</p>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">কয়রা-পাইকগাছা নিউজ ডেস্ক</p>
+                   <div className="overflow-hidden">
+                      <div className="flex items-center gap-1.5 overflow-hidden">
+                        <p className="text-base font-black text-slate-800 leading-none truncate">{reporterData.name}</p>
+                        {reporterData.isVerified && <CheckCircle2 size={15} fill="#1877F2" className="text-white shrink-0" />}
+                      </div>
+                      <div className="flex items-center gap-1 mt-1 overflow-hidden">
+                        {reporterData.isVerified && reporterData.village && (
+                            <p className="text-[10px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md truncate uppercase tracking-tighter shrink-0">{reporterData.village}</p>
+                        )}
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">রিপোর্টার</p>
+                      </div>
                    </div>
                 </div>
-                <button onClick={(e) => toggleSaveNews(e, selectedNews.id)} className={`p-3 rounded-2xl border transition-all ${savedNewsIds.includes(selectedNews.id) ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                <button onClick={(e) => toggleSaveNews(e, selectedNews.id)} className={`p-3 rounded-2xl border transition-all shrink-0 ${savedNewsIds.includes(selectedNews.id) ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
                    {savedNewsIds.includes(selectedNews.id) ? <BookmarkCheck size={20}/> : <BookmarkPlus size={20}/>}
                 </button>
              </div>
@@ -470,7 +505,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                     {comments.map((c, i) => (
                         <div key={i} className="flex gap-3 animate-in fade-in duration-300">
                             <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 shrink-0 overflow-hidden flex items-center justify-center">{c.userPhoto ? <img src={c.userPhoto} className="w-full h-full object-cover" /> : <User size={14} className="text-slate-300"/>}</div>
-                            <div className="flex-1 text-left">
+                            <div className="flex-1 text-left overflow-hidden">
                                 <div className="bg-slate-50 p-3 px-4 rounded-2xl rounded-tl-none inline-block max-w-full"><p className="text-[10px] font-black text-blue-600 uppercase mb-1">{c.userName}</p><p className="text-sm font-bold text-slate-700 leading-snug">{c.text}</p></div>
                                 <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase tracking-tighter">{toBn(new Date(c.timestamp).toLocaleTimeString('bn-BD', {hour:'2-digit', minute:'2-digit'}))}</p>
                             </div>
@@ -493,7 +528,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                 {relatedNews.map(rn => (
                    <button key={rn.id} onClick={() => setSelectedNews(rn)} className="flex gap-4 text-left group">
                       <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100">{rn.photo ? <img src={rn.photo} className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center text-slate-300"><Newspaper size={20}/></div>}</div>
-                      <div className="flex-1 space-y-1"><h5 className="font-black text-slate-800 text-sm leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{rn.title}</h5><p className="text-[10px] font-bold text-slate-400">{toBn(rn.date || 'আজ')}</p></div>
+                      <div className="flex-1 space-y-1 overflow-hidden"><h5 className="font-black text-slate-800 text-sm leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{rn.title}</h5><p className="text-[10px] font-bold text-slate-400">{toBn(rn.date || 'আজ')}</p></div>
                    </button>
                 ))}
              </div>
@@ -505,11 +540,11 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <div className="bg-white min-h-screen animate-in fade-in duration-500 pb-32">
+    <div className="bg-white h-full animate-in fade-in duration-500 pb-40 overflow-y-auto no-scrollbar">
       {showSuccessMessage && (
           <div className="fixed inset-0 z-[180] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center">
               <div className="bg-white w-full max-w-xs rounded-[45px] p-8 shadow-2xl text-center space-y-5 animate-in zoom-in duration-300">
-                  <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600 mx-auto"><CheckCircle2 size={50} /></div>
+                  <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600 mx-auto shadow-sm"><CheckCircle2 size={50} /></div>
                   <h3 className="font-black text-lg text-slate-800 leading-tight">সংবাদ পাঠানোর জন্য আপনাকে ধন্যবাদ</h3>
                   <p className="text-sm font-bold text-slate-500">যাচাই করা শেষে আপনার সংবাদটি প্রকাশ করা হবে।</p>
                   <button onClick={() => { setShowSuccessMessage(false); setActiveCategory('all'); }} className="p-3 bg-red-50 text-red-600 rounded-full shadow-inner active:scale-90 transition-all mx-auto block border border-red-100"><X size={24} /></button>
@@ -517,39 +552,27 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
           </div>
       )}
 
-      <div className="px-5 pt-4 pb-4 space-y-5 bg-white sticky top-0 z-30 border-b border-slate-50 shadow-sm">
-        <header className="relative flex items-center justify-center min-h-[60px]">
-          <button className="absolute left-0 p-2.5 text-slate-800 active:scale-90 transition-all bg-slate-50 rounded-xl border border-slate-100">
-            <MenuIcon size={24} strokeWidth={2.5} />
-          </button>
-          <div className="text-center flex flex-col items-center">
-            <h2 className="text-2xl font-black text-slate-900 leading-none tracking-tight">স্থানীয় সংবাদ</h2>
-            <div className="flex items-center gap-2 mt-2">
-               <div className="w-1.5 h-1.5 bg-red-600 rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.6)]"></div>
-               <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest shimmer-text animate-sub-title">কয়রা পাইকগাছা কমিউনিটি এপস</p>
+      <div className="px-5 pt-4 pb-4 space-y-4 bg-white sticky top-0 z-30 border-b border-slate-50 shadow-sm">
+        <header className="flex flex-wrap items-center gap-2 min-h-[50px] overflow-hidden">
+          {/* Breaking news section wrapped for tight screens */}
+          {breakingNews.length > 0 ? (
+            <div className="flex-1 min-w-[120px] bg-red-50 border border-red-100 overflow-hidden py-2 relative flex items-center rounded-xl h-11 shadow-sm">
+               <div className="absolute left-0 z-10 bg-red-600 text-white px-2 py-0.5 text-[8px] font-black uppercase tracking-widest shadow-md rounded-r-lg">ব্রেকিং</div>
+               <div className="overflow-hidden w-full h-full flex items-center pl-14">
+                 <div className="scrolling-text text-[11px] font-bold text-red-700 whitespace-nowrap" style={{ animationDuration: '20s' }}>
+                   {breakingNews.map((n, idx) => `  ${toBn(idx + 1)}. ${n.text}`).join('   •   ')}
+                 </div>
+               </div>
             </div>
-          </div>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center">
-            <button 
-              onClick={handleSubmissionClick} 
-              className="px-4 py-2.5 submit-news-glow text-white rounded-xl font-black text-xs uppercase tracking-wide shadow-lg active:scale-95 transition-all flex items-center gap-2 border-b-2 border-green-800/20"
-            >
-              <Plus size={14} strokeWidth={4} /> সংবাদ পাঠান
-            </button>
-          </div>
+          ) : (
+            <div className="flex-1 h-11"></div>
+          )}
         </header>
 
-        {breakingNews.length > 0 && (
-          <div className="bg-red-50 border-y border-red-100 overflow-hidden py-2.5 relative flex items-center rounded-2xl">
-             <div className="absolute left-0 z-10 bg-red-600 text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-lg rounded-r-lg">ব্রেকিং</div>
-             <div className="overflow-hidden w-full h-full flex items-center"><div className="scrolling-text text-[13px] font-bold text-red-700 whitespace-nowrap" style={{ animationDuration: '20s' }}>{breakingNews.map((n, idx) => `  ${toBn(idx + 1)}. ${n.text}`).join('   •   ')}</div></div>
-          </div>
-        )}
-
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-           <button onClick={() => setActiveCategory('all')} className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-xs transition-all border ${activeCategory === 'all' ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100'}`}>সব সংবাদ</button>
+           <button onClick={() => setActiveCategory('all')} className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-xs transition-all border shrink-0 ${activeCategory === 'all' ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100'}`}>সব সংবাদ</button>
            {categories.map(cat => (
-             <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-xs transition-all border ${activeCategory === cat.id ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100'}`}>{cat.name}</button>
+             <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-xs transition-all border shrink-0 ${activeCategory === cat.id ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100'}`}>{cat.name}</button>
            ))}
         </div>
       </div>
@@ -562,10 +585,21 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
         <div className="pt-6 px-5 space-y-10">
           {featuredNews && activeCategory === 'all' && (
             <div className="animate-in slide-in-from-bottom-4 duration-700">
-               <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp size={16} className="text-red-600" />
-                  <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">আপডেট সংবাদ</span>
+               <div className="flex items-center justify-between mb-4 overflow-hidden gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <TrendingUp size={16} className="text-red-600" />
+                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">আপডেট সংবাদ</span>
+                  </div>
+                  
+                  <button 
+                    onClick={handleSubmissionClick} 
+                    className="px-4 py-2 animate-ghost-pulse text-white rounded-xl font-black text-[10px] uppercase tracking-wide shadow-lg active:scale-95 transition-all flex items-center gap-2 shrink-0 border-b-2 border-green-800/20"
+                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                  >
+                    <Plus size={12} strokeWidth={4} /> সংবাদ পাঠান
+                  </button>
                </div>
+
                <button onClick={() => setSelectedNews(featuredNews)} className="w-full text-left group transition-all">
                  <div className="w-full aspect-[16/9] rounded-[35px] overflow-hidden bg-slate-100 border border-slate-100 mb-5 relative shadow-md">
                     {featuredNews.photo ? (
@@ -574,13 +608,35 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                        <div className="w-full h-full flex items-center justify-center text-slate-300"><Newspaper size={48}/></div>
                     )}
                     <div className="absolute top-4 left-4 flex gap-2"><span className="px-3 py-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg">আজকের খবর</span></div>
-                    <div className="absolute bottom-4 left-4"><span className="px-3 py-1 bg-blue-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg">{categories.find(c=>c.id===featuredNews.category)?.name || 'সাধারণ'}</span></div>
+                    <div className="absolute bottom-4 left-4"><span className="px-3 py-1 bg-blue-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg truncate max-w-[120px]">{categories.find(c=>c.id===featuredNews.category)?.name || 'সাধারণ'}</span></div>
                  </div>
-                 <h3 className="text-2xl font-black text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{featuredNews.title}</h3>
-                 <p className="text-sm font-medium text-slate-500 mt-3 line-clamp-3 leading-relaxed">{featuredNews.description}</p>
-                 <div className="flex items-center justify-between mt-5 pt-5 border-t border-slate-50">
-                    <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest"><span>{toBn(featuredNews.date || 'আজ')}</span><span>•</span><span className="text-blue-500">বিস্তারিত পড়ুন <ArrowRight size={10} className="inline ml-1" /></span></div>
-                    <div className="flex gap-2">
+                 <h3 className="text-2xl font-black text-slate-900 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{featuredNews.title}</h3>
+                 <p className="text-sm font-medium text-slate-500 mt-3 line-clamp-2 leading-relaxed">{featuredNews.description}</p>
+                 <div className="flex items-center justify-between mt-5 pt-5 border-t border-slate-50 overflow-hidden">
+                    {(() => {
+                        const rep = getReporterData(featuredNews);
+                        return (
+                            <div className="flex items-center gap-3 text-left overflow-hidden pr-2">
+                                <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                                    {rep.photoURL ? (
+                                        <img src={rep.photoURL} className="w-full h-full object-cover" alt="Avatar" />
+                                    ) : (
+                                        <UserCircle size={22} className="text-slate-300" />
+                                    )}
+                                </div>
+                                <div className="flex flex-col overflow-hidden">
+                                    <div className="flex items-center gap-1.5 overflow-hidden">
+                                        <span className="text-[11px] font-black text-slate-800 truncate">{rep.name}</span>
+                                        {rep.isVerified && <CheckCircle2 size={12} fill="#1877F2" className="text-white shrink-0" />}
+                                    </div>
+                                    {rep.isVerified && rep.village && (
+                                        <p className="text-[8px] font-bold text-blue-500 uppercase mt-0.5 tracking-tighter truncate">{rep.village}</p>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })()}
+                    <div className="flex gap-2 shrink-0">
                         <button onClick={(e) => toggleSaveNews(e, featuredNews.id)} className={`p-2 rounded-xl border transition-all ${savedNewsIds.includes(featuredNews.id) ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-slate-100 text-slate-300'}`}><Bookmark size={16} /></button>
                         <button onClick={(e) => { e.stopPropagation(); handleShare(featuredNews); }} className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100 active:scale-90 transition-all"><Share2 size={16} /></button>
                     </div>
@@ -588,15 +644,41 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                </button>
             </div>
           )}
-          <div className="space-y-8">
-            <div className="flex items-center justify-between"><div className="flex items-center gap-3"><Bookmark size={18} className="text-blue-600" /><h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">অন্যান্য সংবাদ</h4></div><div className="h-px bg-slate-100 flex-1 ml-4"></div></div>
+          <div className="space-y-8 pb-10">
+            <div className="flex items-center justify-between"><div className="flex items-center gap-3 shrink-0"><Bookmark size={18} className="text-blue-600" /><h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">অন্যান্য সংবাদ</h4></div><div className="h-px bg-slate-100 flex-1 ml-4"></div></div>
             <div className="space-y-10">
-              {regularNews.map((news, idx) => (
-                <button key={news.id} onClick={() => setSelectedNews(news)} className="w-full flex gap-5 text-left group animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
-                  <div className="flex-1 space-y-2 py-0.5"><div className="flex items-center gap-2 text-[8px] font-black text-blue-500 uppercase tracking-widest"><span className="text-red-600 font-black">{categories.find(c=>c.id===news.category)?.name || 'সাধারণ'}</span><span>•</span><span>{toBn(news.date || 'আজ')}</span></div><h3 className="text-base font-black text-slate-900 leading-snug line-clamp-3 group-hover:text-blue-600 transition-colors">{news.title}</h3><div className="flex items-center gap-3 pt-1"><button onClick={(e) => toggleSaveNews(e, news.id)} className={`transition-colors ${savedNewsIds.includes(news.id) ? 'text-blue-600' : 'text-slate-300'}`}><Bookmark size={12} fill={savedNewsIds.includes(news.id) ? "currentColor" : "none"} /></button><span className="text-[9px] font-bold text-slate-400">রিপোর্টার: {news.reporter?.split(' ')[0] || 'ডেস্ক'}</span></div></div>
-                  <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 shadow-sm shrink-0">{news.photo ? <img src={news.photo} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><Newspaper size={24}/></div>}</div>
-                </button>
-              ))}
+              {regularNews.map((news, idx) => {
+                const rep = getReporterData(news);
+                return (
+                    <button key={news.id} onClick={() => setSelectedNews(news)} className="w-full flex gap-4 text-left group animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
+                      <div className="flex-1 space-y-2 py-0.5 overflow-hidden">
+                        <div className="flex items-center gap-2 text-[8px] font-black text-blue-500 uppercase tracking-widest overflow-hidden">
+                            <span className="text-red-600 font-black truncate">{categories.find(c=>c.id===news.category)?.name || 'সাধারণ'}</span>
+                            <span className="shrink-0">•</span>
+                            <span className="shrink-0">{toBn(news.date || 'আজ')}</span>
+                        </div>
+                        <h3 className="text-base font-black text-slate-900 leading-snug line-clamp-3 group-hover:text-blue-600 transition-colors">{news.title}</h3>
+                        <div className="flex items-center gap-2 text-left overflow-hidden pt-1">
+                            <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                                {rep.photoURL ? (
+                                    <img src={rep.photoURL} className="w-full h-full object-cover" alt="Rep" />
+                                ) : (
+                                    <User size={12} className="text-slate-300" />
+                                )}
+                            </div>
+                            <div className="flex items-center gap-1 overflow-hidden">
+                                <span className="text-[10px] font-black text-slate-600 truncate">{rep.name}</span>
+                                {rep.isVerified && <CheckCircle2 size={11} fill="#1877F2" className="text-white shrink-0" />}
+                                {rep.isVerified && rep.village && (
+                                    <span className="text-[9px] font-bold text-blue-500 opacity-80 truncate ml-1 overflow-hidden max-w-[60px]">• {rep.village}</span>
+                                )}
+                            </div>
+                        </div>
+                      </div>
+                      <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 shadow-sm shrink-0">{news.photo ? <img src={news.photo} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><Newspaper size={24}/></div>}</div>
+                    </button>
+                );
+              })}
             </div>
           </div>
         </div>
