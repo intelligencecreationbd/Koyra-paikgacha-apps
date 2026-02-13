@@ -35,7 +35,8 @@ import {
   Newspaper,
   LayoutGrid,
   LogOut,
-  Key
+  Key,
+  Info
 } from 'lucide-react';
 import { User as AppUser } from '../types';
 
@@ -179,7 +180,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
       const userCredential = await signInWithEmailAndPassword(auth, userData.email, loginData.password);
       
-      // Mandatory Email Verification Check
       if (!userCredential.user.emailVerified) {
         await signOut(auth);
         setErrorMsg('আপনার ইমেইলটি এখনও ভেরিফাই করা হয়নি। অনুগ্রহ করে আপনার ইমেইল চেক করে ভেরিফিকেশন লিঙ্কটি ক্লিক করুন।');
@@ -195,6 +195,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       
       if (targetAction === 'ledger') navigate('/ledger');
       else if (targetAction === 'haat') navigate('/online-haat');
+      else if (targetAction === 'chat') navigate('/chat');
       else setMode('profile');
 
     } catch (err: any) {
@@ -238,7 +239,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Send Email Verification Link
       await sendEmailVerification(userCredential.user);
 
       const memberId = `KP${Date.now().toString().slice(-8)}`;
@@ -257,7 +257,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
       
       await setDoc(doc(dbFs, "users", userCredential.user.uid), userData);
       
-      // CRITICAL: Force Sign Out after registration until they verify email
       await signOut(auth);
       
       setSuccessMsg('নিবন্ধন সফল হয়েছে! আপনার ইমেইলে একটি ভেরিফিকেশন লিঙ্ক পাঠানো হয়েছে। অনুগ্রহ করে ইমেইলটি যাচাই করে লগইন করুন।');
@@ -307,13 +306,11 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
   };
 
   const handleProfileSave = async () => {
-    if (!profileEditForm.fullName || !profileEditForm.village || !loggedInUser?.uid) return;
+    if (!loggedInUser?.uid) return;
     setIsSubmitting(true);
     try {
         const userRef = doc(dbFs, "users", loggedInUser.uid);
         const updates = {
-            fullName: profileEditForm.fullName,
-            village: profileEditForm.village,
             photoURL: profileEditForm.photoURL || loggedInUser.photoURL || ''
         };
         await updateDoc(userRef, updates);
@@ -321,7 +318,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         setLoggedInUser(updatedUser);
         localStorage.setItem('kp_logged_in_user', JSON.stringify(updatedUser));
         setIsEditingProfile(false);
-        alert('তথ্য আপডেট হয়েছে!');
+        alert('আপনার প্রোফাইল পিকচার আপডেট হয়েছে!');
     } catch (err) { alert('ত্রুটি!'); }
     finally { setIsSubmitting(false); }
   };
@@ -427,7 +424,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
               </button>
             </div>
 
-            {/* Notification Messages */}
             {errorMsg && (
                 <div className="p-4 bg-red-50 border border-red-100 rounded-2xl animate-in shake duration-300">
                     <p className="text-red-600 text-xs font-bold text-center leading-relaxed">{errorMsg}</p>
@@ -491,7 +487,6 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
         </div>
       )}
 
-      {/* Profile Edit Overlay */}
       {isEditingProfile && (
         <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center">
             <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl space-y-6 animate-in zoom-in duration-300 text-left">
@@ -508,11 +503,17 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                         <button type="button" onClick={() => profilePicRef.current?.click()} className="absolute bottom-0 right-0 p-3 bg-blue-600 text-white rounded-2xl shadow-xl border-4 border-white active:scale-90 transition-all"><Camera size={18} strokeWidth={3} /></button>
                         <input type="file" ref={profilePicRef} className="hidden" accept="image/*" onChange={handleProfilePhotoUpload} />
                     </div>
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mt-4">শুধুমাত্র ছবি পরিবর্তনযোগ্য</p>
                 </div>
 
                 <div className="space-y-4">
-                    <Field label="আপনার নাম" value={profileEditForm.fullName} onChange={v => setProfileEditForm({...profileEditForm, fullName: v})} icon={<UserIcon size={18}/>} />
-                    <Field label="গ্রামের নাম" value={profileEditForm.village} onChange={v => setProfileEditForm({...profileEditForm, village: v})} icon={<MapPin size={18}/>} />
+                    <Field label="আপনার নাম" value={profileEditForm.fullName} onChange={() => {}} icon={<UserIcon size={18}/>} readOnly={true} />
+                    <Field label="গ্রামের নাম" value={profileEditForm.village} onChange={() => {}} icon={<MapPin size={18}/>} readOnly={true} />
+                    
+                    <div className="p-3 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-start gap-3">
+                       <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
+                       <p className="text-[10px] font-bold text-blue-600 leading-relaxed">ভেরিফিকেশনের স্বার্থে নাম এবং গ্রাম পরিবর্তন করার সুযোগ নেই। প্রয়োজনে এডমিনের সাথে যোগাযোগ করুন।</p>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
@@ -537,9 +538,9 @@ const Field: React.FC<{ label: string; value: string; type?: string; placeholder
         type={type} 
         placeholder={placeholder} 
         readOnly={readOnly}
-        className={`w-full ${icon ? 'pl-11' : 'px-5'} py-4 rounded-[22px] bg-[#F8FAFC]/70 text-slate-800 border border-slate-200 outline-none font-bold focus:border-blue-400 transition-all shadow-inner ${readOnly ? 'opacity-60' : ''}`} 
+        className={`w-full ${icon ? 'pl-11' : 'px-5'} py-4 rounded-[22px] bg-[#F8FAFC]/70 text-slate-800 border border-slate-200 outline-none font-bold focus:border-blue-400 transition-all shadow-inner ${readOnly ? 'opacity-60 cursor-not-allowed bg-slate-100' : ''}`} 
         value={value} 
-        onChange={e => onChange(e.target.value)} 
+        onChange={e => !readOnly && onChange(e.target.value)} 
       />
     </div>
   </div>
