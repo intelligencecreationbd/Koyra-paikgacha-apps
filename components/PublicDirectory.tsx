@@ -18,7 +18,8 @@ import {
   Mail,
   Type,
   Info,
-  MessageCircle
+  MessageCircle,
+  FileText
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
@@ -62,22 +63,24 @@ const WhatsAppIcon = ({ size = 20 }: { size?: number }) => (
   </svg>
 );
 
+// Updated Profile Component Row with better padding and icon colors
 const ContactInfoRow: React.FC<{ icon: any, label: string, value: string, colorClass?: string, iconColor?: string }> = ({ icon: Icon, label, value, colorClass = "bg-slate-50", iconColor = "text-slate-400" }) => (
   <div className={`${colorClass}/50 p-5 rounded-[32px] border border-slate-100 flex items-start gap-4 text-left shadow-sm`}>
     <div className={`w-11 h-11 bg-white rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${iconColor}`}><Icon size={20} /></div>
     <div className="overflow-hidden">
-      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{label}</p>
+      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{label}</p>
       <p className="text-sm font-bold text-slate-700 leading-relaxed">{value}</p>
     </div>
   </div>
 );
 
+// Matching the screenshot style for mobile numbers
 const MobileActionRow: React.FC<{ mobile: string, label: string }> = ({ mobile, label }) => (
   <div className="bg-slate-50/50 p-5 rounded-[32px] border border-slate-100 flex items-center justify-between shadow-sm">
     <div className="flex items-center gap-4 text-left overflow-hidden">
       <div className="w-11 h-11 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center shadow-sm shrink-0"><Smartphone size={20} /></div>
       <div className="overflow-hidden">
-         <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{label}</p>
+         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">{label}</p>
          <p className="text-base font-black text-slate-800 font-inter tracking-tight truncate">{mobile}</p>
       </div>
     </div>
@@ -236,7 +239,7 @@ const PublicDirectory: React.FC<PublicDirectoryProps> = ({ id, categoryName, pat
     const enTerm = convertBnToEn(term);
     
     return source.filter(item => 
-      (item.name || '').toLowerCase().includes(term) ||
+      (item.name || '').toLowerCase().includes(term) || 
       (item.designation || '').toLowerCase().includes(term) ||
       (item.mobile || '').includes(term) ||
       (item.address || '').toLowerCase().includes(term) ||
@@ -246,54 +249,87 @@ const PublicDirectory: React.FC<PublicDirectoryProps> = ({ id, categoryName, pat
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] animate-in fade-in duration-500">
-      <header className="flex items-center justify-between mb-4 shrink-0">
+      <header className="flex items-center justify-between mb-4 shrink-0 px-1">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90 shrink-0">
+          <button onClick={selectedItem ? () => onNavigate(location.pathname) : onBack} className="p-3 bg-white border border-slate-100 rounded-xl shadow-sm transition-transform active:scale-90 shrink-0">
             <ChevronLeft size={20} className="text-slate-800" />
           </button>
           <div className="text-left overflow-hidden">
             <h2 className="text-xl font-black text-slate-800 leading-tight truncate">{categoryName}</h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-              {isSearchMode ? 'পুরো ডিরেক্টরিতে খুঁজুন' : 'আপনার পছন্দ মত সিলেক্ট করুন'}
+              {selectedItem ? 'বিস্তারিত তথ্য' : isSearchMode ? 'পুরো ডিরেক্টরিতে খুঁজুন' : 'আপনার পছন্দ মত সিলেক্ট করুন'}
             </p>
           </div>
         </div>
-        <button 
-          onClick={() => { setIsSearchMode(!isSearchMode); setSearchTerm(''); }}
-          className={`p-3 rounded-xl shadow-sm transition-all active:scale-90 shrink-0 flex items-center justify-center border ${isSearchMode ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-slate-100'}`}
-        >
-          {isSearchMode ? <ArrowLeft size={22} /> : <Search size={22} strokeWidth={2.5} />}
-        </button>
+        {!selectedItem && (
+          <button 
+            onClick={() => { setIsSearchMode(!isSearchMode); setSearchTerm(''); }}
+            className={`p-3 rounded-xl shadow-sm transition-all active:scale-90 shrink-0 flex items-center justify-center border ${isSearchMode ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-slate-100'}`}
+          >
+            {isSearchMode ? <ArrowLeft size={22} /> : <Search size={22} strokeWidth={2.5} />}
+          </button>
+        )}
       </header>
 
       <div className="flex-1 overflow-y-auto no-scrollbar pb-40 space-y-5">
         {selectedItem ? (
-          <div className="animate-in slide-in-from-bottom-6 duration-500 w-full flex flex-col items-center space-y-6">
+          <div className="animate-in slide-in-from-bottom-6 duration-500 w-full flex flex-col items-center space-y-6 px-1">
             <div className="w-full bg-white p-8 rounded-[45px] shadow-[0_20px_60px_rgba(0,0,0,0.06)] border border-slate-50 space-y-8">
+                {/* Profile Section matching Screenshot */}
                 <div className="flex flex-col items-center gap-5">
                   <div className="relative">
-                    <div className="w-32 h-32 rounded-[40px] border-[5px] border-white shadow-xl overflow-hidden bg-slate-50 flex items-center justify-center text-slate-200">
-                      {selectedItem.photo ? <img src={selectedItem.photo} className="w-full h-full object-cover" alt="" /> : <UserCircle size={60} strokeWidth={1} />}
+                    <div className="w-40 h-40 rounded-full border-[6px] border-white shadow-2xl overflow-hidden bg-slate-50 flex items-center justify-center text-slate-200">
+                      {selectedItem.photo ? <img src={selectedItem.photo} className="w-full h-full object-cover" alt="" /> : <UserCircle size={80} strokeWidth={1} />}
                     </div>
-                    <div className="absolute -bottom-2 -right-2 p-2.5 bg-blue-600 text-white rounded-2xl shadow-lg border-4 border-white">
-                       <CheckCircle2 size={16} />
+                    {/* Blue Verified Badge exactly as screenshot */}
+                    <div className="absolute bottom-2 right-2 p-3 bg-blue-600 text-white rounded-full shadow-lg border-[3px] border-white flex items-center justify-center">
+                       <CheckCircle2 size={18} fill="currentColor" className="text-white" />
                     </div>
                   </div>
-                  <div className="text-center space-y-1">
+                  <div className="text-center space-y-1.5">
                     <h1 className="text-2xl font-black text-slate-800 leading-tight">{selectedItem.name}</h1>
-                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">{selectedItem.designation || 'বিস্তারিত'}</p>
+                    <p className="text-sm font-black text-blue-600 uppercase tracking-widest">{selectedItem.designation || 'বিস্তারিত তথ্য'}</p>
                   </div>
                 </div>
+
+                {/* All Contact Information Section */}
                 <div className="space-y-4">
+                  {/* Mobiles */}
                   {selectedItem.mobile && <MobileActionRow mobile={selectedItem.mobile} label="প্রাথমিক মোবাইল নম্বর" />}
                   {selectedItem.extraMobiles && selectedItem.extraMobiles.map((mob: string, i: number) => mob && (
                     <MobileActionRow key={i} mobile={mob} label={`অতিরিক্ত নম্বর (${toBn(i + 1)})`} />
                   ))}
-                  {selectedItem.email && <ContactInfoRow icon={Mail} label="ইমেইল এড্রেস" value={selectedItem.email} colorClass="bg-blue-50" iconColor="text-blue-500" />}
-                  {selectedItem.address && <ContactInfoRow icon={MapPin} label="ঠিকানা" value={selectedItem.address} colorClass="bg-emerald-50" iconColor="text-emerald-500" />}
+
+                  {/* Email */}
+                  {selectedItem.email && (
+                    <ContactInfoRow icon={Mail} label="ইমেইল এড্রেস" value={selectedItem.email} colorClass="bg-blue-50" iconColor="text-blue-500" />
+                  )}
+
+                  {/* Address */}
+                  {selectedItem.address && (
+                    <ContactInfoRow icon={MapPin} label="ঠিকানা (অফিস/এলাকা)" value={selectedItem.address} colorClass="bg-emerald-50" iconColor="text-emerald-500" />
+                  )}
+
+                  {/* Custom Info Fields */}
                   {selectedItem.customInfo && selectedItem.customInfo.map((info: any, i: number) => (info.label && info.value) && (
                     <ContactInfoRow key={i} icon={Type} label={info.label} value={info.value} colorClass="bg-indigo-50" iconColor="text-indigo-500" />
                   ))}
+
+                  {/* Description Section - Added to fix the 'missing info' issue */}
+                  {selectedItem.description && (
+                    <div className="bg-slate-50/50 p-6 rounded-[35px] border border-slate-100 space-y-3 text-left">
+                       <div className="flex items-center gap-2 mb-1">
+                          <FileText size={16} className="text-slate-400" />
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">বিস্তারিত বিবরণ</p>
+                       </div>
+                       <p className="text-sm font-bold text-slate-600 leading-relaxed whitespace-pre-line text-justify">{selectedItem.description}</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Back Pill as seen in some versions of UI */}
+                <div className="flex justify-center pt-4">
+                   <button onClick={() => onNavigate(location.pathname)} className="px-8 py-3 bg-blue-600 text-white rounded-full font-black text-[12px] uppercase shadow-lg shadow-blue-500/30 active:scale-95 transition-all">BACK</button>
                 </div>
             </div>
           </div>
