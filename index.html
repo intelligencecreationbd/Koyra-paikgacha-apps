@@ -3,7 +3,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Koyra-Paikgacha</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://meet.jit.si/external_api.js"></script>
@@ -19,6 +19,7 @@
                         'gradient-x': 'gradient-x 3s ease infinite',
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'submit-pulse': 'submit-pulse 2s infinite',
+                        'ghost-pulse': 'ghost-pulse 4s ease-in-out infinite',
                     },
                     keyframes: {
                         'gradient-x': {
@@ -29,6 +30,10 @@
                             '0%': { 'box-shadow': '0 0 0 0 rgba(16, 185, 129, 0.7)' },
                             '70%': { 'box-shadow': '0 0 0 12px rgba(16, 185, 129, 0)' },
                             '100%': { 'box-shadow': '0 0 0 0 rgba(16, 185, 129, 0)' },
+                        },
+                        'ghost-pulse': {
+                            '0%, 100%': { opacity: '0.4', filter: 'blur(1px)', transform: 'scale(0.98)' },
+                            '50%': { opacity: '1', filter: 'blur(0px)', transform: 'scale(1)' },
                         }
                     }
                 }
@@ -37,14 +42,50 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
+        :root {
+            --app-height: 100%;
+        }
+        
+        html, body {
+            height: 100%;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            position: fixed; /* Prevents accidental elastic scrolling on iOS */
             font-family: 'Hind Siliguri', sans-serif;
             -webkit-tap-highlight-color: transparent;
             background-color: #FFFFFF;
             color: #1A1A1A;
-            overflow: hidden; /* Disable global scrolling */
-            overscroll-behavior-y: contain; /* Prevent pull-to-refresh style bounce */
+            touch-action: manipulation;
         }
+
+        #root {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Global Content Scaling for small screens */
+        @media (max-width: 360px) {
+            html {
+                font-size: 14px; /* Downscale root font size */
+            }
+            .premium-card {
+                transform: scale(0.98);
+            }
+        }
+
+        @media (min-width: 450px) {
+            #root {
+                max-width: 450px;
+                margin: 0 auto;
+                box-shadow: 0 0 50px rgba(0,0,0,0.1);
+            }
+        }
+
         .scrolling-text {
             white-space: nowrap;
             animation: scroll 25s linear infinite;
@@ -54,7 +95,6 @@
             100% { transform: translateX(-100%); }
         }
         
-        /* Deep Scrollbar Hiding */
         .no-scrollbar::-webkit-scrollbar {
             display: none !important;
             width: 0 !important;
@@ -65,7 +105,6 @@
             scrollbar-width: none !important;
         }
 
-        /* Premium Header Logic */
         .header-liquid {
             background: linear-gradient(-45deg, #001F3F, #003366, #010B13, #002D54);
             background-size: 400% 400%;
@@ -93,11 +132,6 @@
             z-index: 0;
         }
 
-        .header-curves::after {
-            background: radial-gradient(circle at center, rgba(0, 75, 150, 0.15) 0%, transparent 60%);
-            animation: rotateCurves 18s linear infinite reverse;
-        }
-
         @keyframes rotateCurves {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -108,7 +142,6 @@
             -webkit-backdrop-filter: blur(16px) saturate(180%);
         }
 
-        /* Metallic Premium Blue Gradient */
         .metallic-blue {
             background: linear-gradient(135deg, #0062cc 0%, #007BFF 50%, #0056b3 100%);
             box-shadow: 0 10px 25px rgba(0, 86, 179, 0.45), 
@@ -119,28 +152,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .premium-card {
             background: #FFFFFF;
             border: 1px solid rgba(227, 242, 253, 0.6);
             box-shadow: 0 10px 30px -10px rgba(0, 86, 179, 0.12);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            outline: none !important;
+            transition: all 0.3s ease;
         }
+        
         .premium-card:active {
-            transform: scale(0.95);
-            background: #F8FAFC;
-        }
-
-        .icon-floating {
-            animation: floating 3s ease-in-out infinite;
-        }
-        @keyframes floating {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-            100% { transform: translateY(0px); }
+            transform: scale(0.96);
         }
 
         .shimmer-text {
@@ -178,31 +200,21 @@
         @keyframes rainbow-text-flow {
             to { background-position: 200% center; }
         }
-
-        .font-inter {
-            font-family: 'Inter', sans-serif;
-        }
-
-        /* High Visibility Pulse for Submit Button */
-        .submit-news-glow {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            animation: submit-pulse 2s infinite;
-        }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
     "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0"
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
   }
 }
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="bg-white text-[#1A1A1A] transition-colors duration-300">
+<body class="bg-white text-[#1A1A1A]">
     <div id="root"></div>
 <script type="module" src="/index.tsx"></script>
 </body>

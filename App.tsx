@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { Sun, Moon, Lock, ChevronLeft, LogOut, Home as HomeIcon, User as UserIcon, PlusCircle, Menu, X, ArrowRight, Sparkles, NotebookTabs, MessageSquare, UserCircle, Download, ShieldCheck, Zap, Heart, Star, Smartphone, Camera, Gift, Bus, CloudSun, Newspaper, Scale, Phone, HeartPulse, Calculator } from 'lucide-react';
+import { Sun, Moon, Lock, ChevronLeft, LogOut, Home as HomeIcon, User as UserIcon, PlusCircle, Menu, X, ArrowRight, Sparkles, NotebookTabs, MessageSquare, UserCircle, Download, ShieldCheck, Zap, Heart, Star, Smartphone, Camera, Gift, Bus, CloudSun, Newspaper, Scale, Phone, HeartPulse, Calculator, CheckCircle2 } from 'lucide-react';
 import Home from './pages/Home';
 import CategoryView from './pages/CategoryView';
 import InfoSubmit from './pages/InfoSubmit';
@@ -99,21 +99,21 @@ const BottomNav: React.FC = () => {
     <div className="fixed bottom-2 left-0 right-0 z-[80] flex justify-center items-end gap-5 pointer-events-none px-6 pb-2">
       <button 
         onClick={() => navigate('/info-submit')}
-        className={`w-12 h-12 rounded-full metallic-blue pointer-events-auto transition-all duration-300 ${isSubmit ? 'glow-active scale-110' : 'opacity-90'}`}
+        className={`w-12 h-12 rounded-full metallic-blue pointer-events-auto transition-all duration-300 ${isSubmit ? 'glow-active scale-110' : 'opacity-90 active:scale-95'}`}
       >
         <PlusCircle size={22} strokeWidth={isSubmit ? 3 : 2} className="text-white" />
       </button>
 
       <button 
         onClick={handleGlobalBack}
-        className={`w-14 h-14 rounded-full metallic-blue pointer-events-auto -translate-y-1 transition-all duration-300 shadow-xl flex items-center justify-center`}
+        className={`w-14 h-14 rounded-full metallic-blue pointer-events-auto -translate-y-1 transition-all duration-300 shadow-xl flex items-center justify-center active:scale-90`}
       >
         <span className="text-white font-black text-[12px] uppercase tracking-tighter">Back</span>
       </button>
 
       <button 
         onClick={() => navigate('/auth')}
-        className={`w-12 h-12 rounded-full metallic-blue pointer-events-auto transition-all duration-300 ${isProfile ? 'glow-active scale-110' : 'opacity-90'}`}
+        className={`w-12 h-12 rounded-full metallic-blue pointer-events-auto transition-all duration-300 ${isProfile ? 'glow-active scale-110' : 'opacity-90 active:scale-95'}`}
       >
         <UserIcon size={22} strokeWidth={isProfile ? 3 : 2} className="text-white" />
       </button>
@@ -124,7 +124,7 @@ const BottomNav: React.FC = () => {
 const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean) => void, appLogo: string }> = ({ isDarkMode, setIsDarkMode, appLogo }) => {
   const navigate = useNavigate();
   return (
-    <div className={`h-screen w-full relative flex flex-col items-center pt-2 pb-6 px-6 transition-colors duration-500 overflow-hidden ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
+    <div className={`h-full w-full relative flex flex-col items-center pt-2 pb-6 px-6 transition-colors duration-500 overflow-hidden ${isDarkMode ? 'bg-slate-950' : 'bg-white'}`}>
       <button 
         onClick={() => setIsDarkMode(!isDarkMode)}
         className="absolute top-4 right-6 p-3.5 rounded-[18px] bg-slate-900 dark:bg-slate-800 shadow-2xl text-white transition-all active:scale-90 z-20"
@@ -202,6 +202,7 @@ const App = () => {
   const location = useLocation();
   const isLanding = location.pathname === '/';
   const isChatPage = location.pathname === '/chat';
+  const isNewsPage = location.pathname.startsWith('/category/14');
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -306,31 +307,30 @@ const App = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 overflow-x-hidden ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-white text-[#1A1A1A]'}`}>
+    <div className={`min-h-screen w-full flex flex-col transition-colors duration-300 relative ${isDarkMode ? 'bg-slate-950 text-white' : 'bg-white text-[#1A1A1A]'}`}>
       {!isLanding && (
         <>
           <div className={`fixed inset-0 z-[100] transition-opacity duration-300 ${isDrawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <div className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm" onClick={() => setIsDrawerOpen(false)} />
-            <div className={`absolute top-0 left-0 bottom-0 w-80 bg-white dark:bg-slate-950 shadow-2xl transition-transform duration-300 ease-out border-r border-slate-100 dark:border-slate-800 flex flex-col ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+            <div className={`absolute top-0 left-0 bottom-0 w-[85vw] max-w-xs bg-white dark:bg-slate-950 shadow-2xl transition-transform duration-300 ease-out border-r border-slate-100 dark:border-slate-800 flex flex-col ${isDrawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
-                <div className="text-left flex flex-col">
-                  <div className="flex items-baseline gap-1.5">
-                    <h2 className="font-black text-xl text-[#0056b3] dark:text-blue-400 shimmer-text leading-none">কয়রা-পাইকগাছা</h2>
-                    <span className="text-[10px] font-black whitespace-nowrap animate-rainbow-text">কমিউনিটি এপস</span>
+                <div className="text-left flex flex-col overflow-hidden">
+                  <div className="flex items-baseline gap-1.5 overflow-hidden">
+                    <h2 className="font-black text-xl text-[#0056b3] dark:text-blue-400 shimmer-text leading-none truncate">কয়রা-পাইকগাছা</h2>
                   </div>
-                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest animate-pulse mt-1">ডিজিটাল অ্যাপে স্বাগতম</p>
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest animate-pulse mt-1">কমিউনিটি এপস</p>
                 </div>
                 <button 
                   onPointerDown={handleLongPressStart}
                   onPointerUp={handleLongPressEnd}
                   onPointerLeave={handleLongPressEnd}
                   onClick={() => setIsDrawerOpen(false)} 
-                  className="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm text-slate-400 dark:text-slate-500 transition-colors active:scale-90"
+                  className="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm text-slate-400 dark:text-slate-500 transition-colors active:scale-90 shrink-0"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto pt-4 space-y-4">
+              <div className="flex-1 overflow-y-auto pt-4 space-y-4 no-scrollbar">
                  <nav className="px-4 space-y-1">
                     {currentUser ? (
                       <button 
@@ -347,7 +347,12 @@ const App = () => {
                           )}
                         </div>
                         <div className="flex-1 overflow-hidden">
-                          <p className="font-black text-slate-800 dark:text-slate-200 text-base leading-tight truncate">{currentUser.fullName}</p>
+                          <p className="font-black text-slate-800 dark:text-slate-200 text-base leading-tight truncate flex items-center gap-1">
+                             {currentUser.fullName}
+                             {currentUser.isVerified && (
+                                <CheckCircle2 size={14} fill="#1877F2" className="text-white shrink-0" />
+                             )}
+                          </p>
                           <p className="text-[10px] font-black text-blue-500/80 uppercase tracking-tighter mt-0.5">আমার প্রোফাইল</p>
                         </div>
                         <ArrowRight size={16} className="text-blue-400/50 group-hover:translate-x-1 transition-transform" />
@@ -362,7 +367,7 @@ const App = () => {
                     )}
                  </nav>
               </div>
-              <div className="p-6 border-t border-slate-100 dark:border-slate-800 space-y-3 bg-slate-50/30 dark:bg-slate-900/20">
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 space-y-3 bg-slate-50/30 dark:bg-slate-900/20 shrink-0">
                 {(isAdminLoggedIn || currentUser) ? (
                   <button onClick={handleLogout} className="w-full py-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all">
                     <LogOut size={20} /> লগআউট করুন
@@ -374,51 +379,39 @@ const App = () => {
                 )}
 
                 <button onClick={() => { setIsDrawerOpen(false); navigate('/download'); }} className="w-full py-4 download-btn-animate text-white rounded-2xl font-black flex items-center justify-center gap-3 active:scale-95 transition-all overflow-hidden relative group">
-                    <Download size={22} className="live-download-icon group-hover:animate-pulse" />
-                    <span className="shimmer-text">এপস ডাউনলোড করুন</span>
+                    <Download size={22} className="group-hover:animate-pulse" />
+                    <span className="text-xs uppercase tracking-widest font-black">এপস ডাউনলোড</span>
                 </button>
 
-                <div className="flex flex-col items-center justify-center gap-1 float-small mt-3">
-                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Development by</p>
-                  <p className="text-xs font-black tracking-widest shimmer-text uppercase">Intelligence Creation BD</p>
+                <div className="flex flex-col items-center justify-center gap-0.5 mt-3 opacity-60">
+                  <p className="text-[8px] font-black uppercase tracking-[0.2em]">Developed by</p>
+                  <p className="text-[10px] font-black tracking-widest uppercase">Intelligence Creation BD</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <header className={`sticky top-0 z-50 transition-all duration-500 header-liquid header-curves glass-header border-b ${isScrolled ? 'opacity-100 shadow-[0_8px_30px_rgba(0,0,0,0.4)]' : 'opacity-90 shadow-[0_4px_15px_rgba(0,0,0,0.1)]'}`}>
-            <div className="max-w-md mx-auto px-5 h-16 flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-0">
-                <button onClick={() => setIsDrawerOpen(true)} className="p-2.5 rounded-xl text-white/70 hover:text-white transition-all duration-300 active:scale-90">
-                  <Menu size={20} strokeWidth={2} />
+          <header className={`sticky top-0 z-50 transition-all duration-500 header-liquid header-curves glass-header border-b ${isScrolled ? 'opacity-100 shadow-lg' : 'opacity-95'}`}>
+            <div className="w-full px-5 h-16 flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-0 shrink-0">
+                <button onClick={() => setIsDrawerOpen(true)} className="p-2.5 rounded-xl text-white/80 hover:text-white transition-all duration-300 active:scale-90">
+                  <Menu size={22} strokeWidth={2.5} />
                 </button>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="flex items-baseline gap-1.5">
-                  <h1 className="font-black text-2xl tracking-tight text-white leading-none drop-shadow-sm">
-                    {isChatPage ? 'কেপি চ্যাট' : 'কয়রা-পাইকগাছা'}
+              <div className="flex flex-col items-center overflow-hidden">
+                <div className="flex items-baseline gap-1.5 overflow-hidden">
+                  <h1 className="font-black text-xl tracking-tight text-white leading-none drop-shadow-sm truncate">
+                    {isChatPage ? 'কেপি চ্যাট' : isNewsPage ? 'স্থানীয় সংবাদ' : 'কয়রা-পাইকগাছা'}
                   </h1>
-                  {!isChatPage && (
-                    <span className="text-[10px] font-black whitespace-nowrap animate-rainbow-text">কমিউনিটি এপস</span>
-                  )}
                 </div>
-                <div className="relative h-4 flex items-center justify-center mt-1.5 overflow-hidden w-full">
-                  {isChatPage ? (
-                    <span className="text-[10px] font-black tracking-wider uppercase whitespace-nowrap text-blue-100">
-                      কয়রা-পাইকগাছা কমিউনিটি এপস
-                    </span>
-                  ) : (
-                    <span 
-                      key={subtitleIndex}
-                      className="text-[10px] font-black tracking-wider uppercase whitespace-nowrap animate-rainbow-text animate-in fade-in zoom-in duration-500"
-                    >
-                      {subtitles[subtitleIndex]}
-                    </span>
-                  )}
+                <div className="relative h-4 flex items-center justify-center mt-1 overflow-hidden w-full px-2">
+                  <span className="text-[9px] font-black tracking-wider uppercase whitespace-nowrap animate-rainbow-text">
+                    {subtitles[subtitleIndex]}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setIsDarkMode(!isDarkMode)} className="group p-2.5 rounded-xl text-white/70 transition-all duration-300 hover:text-white hover:bg-white/10 active:scale-90">
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2.5 rounded-xl text-white/80 transition-all duration-300 hover:text-white active:scale-90">
                   {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
               </div>
@@ -428,10 +421,10 @@ const App = () => {
       )}
 
       {showAdminLogin && !isAdminLoggedIn && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 w-full max-w-xs rounded-[28px] p-8 shadow-2xl animate-in zoom-in duration-500 border border-slate-100">
             <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Lock className="text-[#0056b3] icon-floating" size={32} />
+              <Lock className="text-[#0056b3]" size={32} />
             </div>
             <h2 className="text-2xl font-bold mb-6 text-center text-[#1A1A1A] dark:text-white">এডমিন লগইন</h2>
             <form onSubmit={handleAdminLogin} className="space-y-4">
@@ -444,43 +437,45 @@ const App = () => {
                 autoFocus
               />
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <button type="button" onClick={() => {setShowAdminLogin(false); setLoginInput('');}} className="py-4 rounded-xl bg-slate-100 dark:bg-slate-700 font-bold text-slate-600 text-sm">বন্ধ করুন</button>
-                <button type="submit" className="py-4 rounded-xl bg-gradient-to-br from-[#0056b3] to-[#007BFF] text-white font-bold text-sm shadow-lg shadow-blue-500/20">প্রবেশ করুন</button>
+                <button type="button" onClick={() => {setShowAdminLogin(false); setLoginInput('');}} className="py-4 rounded-xl bg-slate-100 dark:bg-slate-700 font-bold text-slate-600 text-sm">বন্ধ</button>
+                <button type="submit" className="py-4 rounded-xl bg-[#0056b3] text-white font-bold text-sm shadow-lg">প্রবেশ</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      <main className={`max-w-md mx-auto relative ${isLanding ? 'p-0 m-0 w-full h-screen' : 'h-[calc(100vh-64px)] overflow-y-auto no-scrollbar'}`}>
-        <Routes>
-          <Route path="/" element={<LandingScreen isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} appLogo={appLogo} />} />
-          <Route path="/services" element={<Home notices={notices} isAdmin={isAdminLoggedIn} user={currentUser} />} />
-          <Route path="/category/:id/*" element={<CategoryView />} />
-          <Route path="/hotline" element={<HotlineDetail />} />
-          <Route path="/hotline/:serviceType" element={<HotlineDetail />} />
-          <Route path="/hotline/:serviceType/:upazila" element={<HotlineDetail />} />
-          <Route path="/info-submit" element={<InfoSubmit onSubmission={(s) => setSubmissions([...submissions, s])} />} />
-          <Route path="/auth" element={<UserAuth onLogin={setCurrentUser} />} />
-          <Route path="/ledger" element={currentUser ? <DigitalLedger /> : <Navigate to="/auth?to=ledger" />} />
-          <Route path="/online-haat" element={<OnlineHaat />} />
-          <Route path="/weather" element={<WeatherPage />} />
-          <Route path="/chat" element={<KPCommunityChat />} />
-          <Route path="/medical" element={<PublicMedical onBack={() => navigate('/services')} />} />
-          <Route path="/age-calculator" element={<AgeCalculator onBack={() => navigate('/services')} />} />
-          <Route path="/download" element={
-            <PublicDownload 
-              appLogo={appLogo} 
-              isAdminLoggedIn={isAdminLoggedIn} 
-              onLogoChange={handleLogoChange} 
-            />
-          } />
-          <Route 
-            path="/admin" 
-            element={isAdminLoggedIn ? <AdminDashboard submissions={submissions} notices={notices} onUpdateNotices={setNotices} onUpdatePassword={handleUpdatePassword} adminPassword={adminPassword} onUpdateSubmissions={setSubmissions} /> : <Navigate to="/auth" />} 
-          />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+      <main className={`flex-1 relative w-full overflow-hidden ${isLanding ? '' : 'bg-white dark:bg-slate-950'}`}>
+        <div className="h-full w-full overflow-y-auto no-scrollbar">
+            <Routes>
+              <Route path="/" element={<LandingScreen isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} appLogo={appLogo} />} />
+              <Route path="/services" element={<Home notices={notices} isAdmin={isAdminLoggedIn} user={currentUser} />} />
+              <Route path="/category/:id/*" element={<CategoryView />} />
+              <Route path="/hotline" element={<HotlineDetail />} />
+              <Route path="/hotline/:serviceType" element={<HotlineDetail />} />
+              <Route path="/hotline/:serviceType/:upazila" element={<HotlineDetail />} />
+              <Route path="/info-submit" element={<InfoSubmit onSubmission={(s) => setSubmissions([...submissions, s])} />} />
+              <Route path="/auth" element={<UserAuth onLogin={setCurrentUser} />} />
+              <Route path="/ledger" element={currentUser ? <DigitalLedger /> : <Navigate to="/auth?to=ledger" />} />
+              <Route path="/online-haat" element={<OnlineHaat />} />
+              <Route path="/weather" element={<WeatherPage />} />
+              <Route path="/chat" element={<KPCommunityChat />} />
+              <Route path="/medical" element={<PublicMedical onBack={() => navigate('/services')} />} />
+              <Route path="/age-calculator" element={<AgeCalculator onBack={() => navigate('/services')} />} />
+              <Route path="/download" element={
+                <PublicDownload 
+                  appLogo={appLogo} 
+                  isAdminLoggedIn={isAdminLoggedIn} 
+                  onLogoChange={handleLogoChange} 
+                />
+              } />
+              <Route 
+                path="/admin" 
+                element={isAdminLoggedIn ? <AdminDashboard submissions={submissions} notices={notices} onUpdateNotices={setNotices} onUpdatePassword={handleUpdatePassword} adminPassword={adminPassword} onUpdateSubmissions={setSubmissions} /> : <Navigate to="/auth" />} 
+              />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+        </div>
       </main>
       {!isLanding && <BottomNav />}
     </div>
