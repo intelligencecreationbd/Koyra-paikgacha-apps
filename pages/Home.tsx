@@ -101,6 +101,7 @@ export function Home({ notices, isAdmin, user }: HomeProps) {
                       else if (category.id === '16') navigate('/chat');
                       else if (category.id === '17') navigate('/medical');
                       else if (category.id === '19') navigate('/age-calculator');
+                      else if (category.id === '20') navigate('/chat?open=helpline');
                       else if (category.id === '18') {
                         navigate('/auth');
                       }
