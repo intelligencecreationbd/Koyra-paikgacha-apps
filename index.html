@@ -68,10 +68,10 @@
             overflow-x: hidden;
         }
 
-        /* Global Content Scaling for small screens */
+        /* Global Content Scaling for small screens - CRITICAL FOR MOBILE LAYOUT */
         @media (max-width: 360px) {
             html {
-                font-size: 14px; /* Downscale root font size */
+                font-size: 14px; /* Downscale root font size for smaller phones */
             }
             .premium-card {
                 transform: scale(0.98);
