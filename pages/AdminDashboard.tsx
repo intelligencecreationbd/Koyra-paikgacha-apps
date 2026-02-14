@@ -28,7 +28,8 @@ import {
   User as UserIcon,
   Phone,
   Newspaper,
-  ShoppingBag
+  ShoppingBag,
+  HeartPulse
 } from 'lucide-react';
 import { Submission, Notice, User as AppUser, HotlineContact, BusCounter, LegalServiceContact } from '../types';
 import AdminHotlineMgmt from '../components/AdminHotlineMgmt';
@@ -38,6 +39,7 @@ import AdminDirectoryMgmt from '../components/AdminDirectoryMgmt';
 import AdminNewsMgmt from '../components/AdminNewsMgmt';
 import AdminHaatMgmt from '../components/AdminHaatMgmt';
 import AdminUserList from '../components/AdminUserList';
+import AdminMedicalMgmt from '../components/AdminMedicalMgmt';
 
 // Firebase Imports
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -65,7 +67,7 @@ interface AdminDashboardProps {
   adminPassword: string;
 }
 
-type AdminView = 'menu' | 'users' | 'notices' | 'hotline_mgmt' | 'bus_mgmt' | 'legal_mgmt' | 'directory_mgmt' | 'news_mgmt' | 'haat_mgmt' | 'change_pass' | 'user_submissions';
+type AdminView = 'menu' | 'users' | 'notices' | 'hotline_mgmt' | 'bus_mgmt' | 'legal_mgmt' | 'directory_mgmt' | 'news_mgmt' | 'haat_mgmt' | 'medical_mgmt' | 'change_pass' | 'user_submissions';
 
 const Header: React.FC<{ title: string; onBack: () => void }> = ({ title, onBack }) => (
   <div className="flex items-center gap-4 mb-6 text-left">
@@ -162,6 +164,7 @@ export default function AdminDashboard({ submissions, notices, onUpdateNotices, 
             <MenuListItem onClick={() => setCurrentView('directory_mgmt')} icon={<Phone size={26} />} label="মোবাইল নাম্বার ম্যানেজার" color="#673AB7" />
             <MenuListItem onClick={() => setCurrentView('news_mgmt')} icon={<Newspaper size={26} />} label="সংবাদ ম্যানেজার" color="#4CAF50" />
             <MenuListItem onClick={() => setCurrentView('haat_mgmt')} icon={<ShoppingBag size={26} />} label="অনলাইন হাট ম্যানেজার" color="#F1C40F" />
+            <MenuListItem onClick={() => setCurrentView('medical_mgmt')} icon={<HeartPulse size={26} />} label="চিকিৎসা সেবা ম্যানেজমেন্ট" color="#E91E63" />
             <MenuListItem onClick={() => setCurrentView('bus_mgmt')} icon={<Bus size={26} />} label="বাস কাউন্টার ম্যানেজার" color="#E67E22" />
             <MenuListItem onClick={() => setCurrentView('legal_mgmt')} icon={<Scale size={26} />} label="আইনি সেবা ম্যানেজার" color="#2980B9" />
             <MenuListItem onClick={() => setCurrentView('users')} icon={<Users size={26} />} label="ইউজার লিস্ট" color="#2ECC71" />
@@ -176,6 +179,7 @@ export default function AdminDashboard({ submissions, notices, onUpdateNotices, 
       {currentView === 'directory_mgmt' && <AdminDirectoryMgmt onBack={() => setCurrentView('menu')} />}
       {currentView === 'news_mgmt' && <AdminNewsMgmt onBack={() => setCurrentView('menu')} />}
       {currentView === 'haat_mgmt' && <AdminHaatMgmt onBack={() => setCurrentView('menu')} />}
+      {currentView === 'medical_mgmt' && <AdminMedicalMgmt onBack={() => setCurrentView('menu')} />}
       {currentView === 'bus_mgmt' && <AdminBusMgmt onBack={() => setCurrentView('menu')} />}
       {currentView === 'legal_mgmt' && <AdminLegalMgmt onBack={() => setCurrentView('menu')} />}
       {currentView === 'users' && <AdminUserList onBack={() => setCurrentView('menu')} />}

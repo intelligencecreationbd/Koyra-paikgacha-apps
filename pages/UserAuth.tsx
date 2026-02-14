@@ -85,12 +85,11 @@ const convertToEn = (str: string) => {
     if (!str) return '';
     const bn = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'], en = ['0','1','2','3','4','5','6','7','8','9'];
     let result = str.toString().replace(/[০-৯]/g, (s) => en[bn.indexOf(s)]).replace(/[^0-9]/g, '').trim();
-    if (result.startsWith('880') && result.length === 13) {
-        result = result.substring(2);
-    }
-    if (result.length === 10 && result.startsWith('1')) {
-        result = '0' + result;
-    }
+    
+    // Normalize to 11 digits starting with 0
+    if (result.startsWith('880')) result = result.substring(2);
+    if (result.length === 10 && !result.startsWith('0')) result = '0' + result;
+    
     return result;
 };
 
@@ -153,59 +152,87 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
-    const cleanMobile = convertToEn(loginData.mobile);
     
-    if (!cleanMobile || !loginData.password) {
-      setErrorMsg('মোবাইল নম্বর এবং পাসওয়ার্ড প্রদান করুন।');
+    const cleanMobile = convertToEn(loginData.mobile);
+    if (!cleanMobile || cleanMobile.length < 11) {
+      setErrorMsg('সঠিক ১১ ডিজিটের মোবাইল নম্বর প্রদান করুন।');
+      return;
+    }
+    if (!loginData.password) {
+      setErrorMsg('পাসওয়ার্ড প্রদান করুন।');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const q = query(collection(dbFs, "users"), where("mobile", "==", cleanMobile));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        setErrorMsg('এই মোবাইল নম্বরটি দিয়ে কোনো একাউন্ট খুঁজে পাওয়া যায়নি।');
+      // Step 1: Database Lookup
+      let userData: any = null;
+      try {
+        const q = query(collection(dbFs, "users"), where("mobile", "==", cleanMobile));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+          setErrorMsg('এই মোবাইল নম্বরটি দিয়ে কোনো একাউন্ট খুঁজে পাওয়া যায়নি।');
+          setIsSubmitting(false);
+          return;
+        }
+        userData = querySnapshot.docs[0].data();
+      } catch (dbErr: any) {
+        console.error("Firestore lookup failed:", dbErr);
+        setErrorMsg('ডেটাবেস কানেকশন এরর! অনুগ্রহ করে আবার চেষ্টা করুন।');
         setIsSubmitting(false);
         return;
       }
 
-      const userData = querySnapshot.docs[0].data();
       if (userData.status === 'suspended') {
         setErrorMsg('আপনার একাউন্টটি সাসপেন্ড করা হয়েছে। এডমিনের সাথে যোগাযোগ করুন।');
         setIsSubmitting(false);
         return;
       }
 
-      const userCredential = await signInWithEmailAndPassword(auth, userData.email, loginData.password);
-      
-      if (!userCredential.user.emailVerified) {
-        await signOut(auth);
-        setErrorMsg('আপনার ইমেইলটি এখনও ভেরিফাই করা হয়নি। অনুগ্রহ করে আপনার ইমেইল চেক করে ভেরিফিকেশন লিঙ্কটি ক্লিক করুন।');
+      if (!userData.email) {
+        setErrorMsg('আপনার প্রোফাইলে ইমেইল ঠিকানা পাওয়া যায়নি। এডমিনের সাথে যোগাযোগ করুন।');
         setIsSubmitting(false);
         return;
       }
 
-      const finalUser = { ...userData, uid: userCredential.user.uid, password: loginData.password };
-      
-      setLoggedInUser(finalUser);
-      localStorage.setItem('kp_logged_in_user', JSON.stringify(finalUser));
-      onLogin(finalUser as any);
-      
-      if (targetAction === 'ledger') navigate('/ledger');
-      else if (targetAction === 'haat') navigate('/online-haat');
-      else if (targetAction === 'chat') navigate('/chat');
-      else setMode('profile');
+      // Step 2: Authentication
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, userData.email, loginData.password);
+        
+        if (!userCredential.user.emailVerified) {
+          await signOut(auth);
+          setErrorMsg('আপনার ইমেইলটি এখনও ভেরিফাই করা হয়নি। আপনার ইনবক্স চেক করে লিঙ্কটি ক্লিক করুন।');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const finalUser = { ...userData, uid: userCredential.user.uid, password: loginData.password };
+        
+        setLoggedInUser(finalUser);
+        localStorage.setItem('kp_logged_in_user', JSON.stringify(finalUser));
+        onLogin(finalUser as any);
+        
+        if (targetAction === 'ledger') navigate('/ledger');
+        else if (targetAction === 'haat') navigate('/online-haat?action=add');
+        else if (targetAction === 'news') navigate('/category/14?action=submit');
+        else if (targetAction === 'chat') navigate('/chat');
+        else setMode('profile');
+
+      } catch (authErr: any) {
+        console.error("Auth failed:", authErr.code);
+        if (authErr.code === 'auth/invalid-credential' || authErr.code === 'auth/wrong-password' || authErr.code === 'auth/user-not-found') {
+            setErrorMsg('মোবাইল নম্বর অথবা পাসওয়ার্ডটি সঠিক নয়।');
+        } else if (authErr.code === 'auth/too-many-requests') {
+            setErrorMsg('অতিরিক্ত ভুল চেষ্টার কারণে লগইন সাময়িকভাবে বন্ধ আছে। কিছুক্ষণ পর চেষ্টা করুন।');
+        } else {
+            setErrorMsg('লগইন ব্যর্থ হয়েছে! (' + authErr.code + ')');
+        }
+      }
 
     } catch (err: any) {
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-          setErrorMsg('মোবাইল নম্বর অথবা পাসওয়ার্ডটি সঠিক নয়।');
-      } else if (err.code === 'auth/too-many-requests') {
-          setErrorMsg('অতিরিক্ত ভুল চেষ্টার কারণে লগইন সাময়িকভাবে বন্ধ আছে। কিছুক্ষণ পর চেষ্টা করুন।');
-      } else {
-          setErrorMsg('লগইন ব্যর্থ হয়েছে। আপনার ইন্টারনেট কানেকশন চেক করুন।');
-      }
+      console.error("General Login Error:", err);
+      setErrorMsg('লগইন প্রক্রিয়ায় সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
     } finally {
       setIsSubmitting(false);
     }
@@ -383,14 +410,14 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
                     <div className="flex-1"><p className="font-black text-base uppercase tracking-[0.1em]">ডিজিটাল খাতা</p><p className="text-[11px] font-bold opacity-70 mt-1">লেনদেনের হিসাব রাখুন</p></div>
                     <ChevronRight className="opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" size={24} />
                 </button>
-                <button onClick={() => navigate('/online-haat')} className="w-full p-6 bg-[#10B981] text-white rounded-[35px] flex items-center gap-5 shadow-xl active:scale-95 transition-all text-left overflow-hidden relative group">
+                <button onClick={() => navigate('/online-haat?view=mine')} className="w-full p-6 bg-[#10B981] text-white rounded-[35px] flex items-center gap-5 shadow-xl active:scale-95 transition-all text-left overflow-hidden relative group">
                     <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:bg-white/30 transition-colors"><ShoppingBasket size={28}/></div>
-                    <div className="flex-1"><p className="font-black text-base uppercase tracking-[0.1em]">আমার পন্য</p><p className="text-[11px] font-bold opacity-70 mt-1">আপনার বিজ্ঞাপনের লিস্ট</p></div>
+                    <div className="flex-1"><p className="font-black text-base uppercase tracking-[0.1em]">আমার পন্য</p><p className="text-[11px] font-bold opacity-70 mt-1">নিজের বিজ্ঞাপিত পণ্যের তালিকা</p></div>
                     <ChevronRight className="opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" size={24} />
                 </button>
                 <button onClick={() => navigate('/category/14')} className="w-full p-6 bg-[#3B82F6] text-white rounded-[35px] flex items-center gap-5 shadow-xl active:scale-95 transition-all text-left overflow-hidden relative group">
                     <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:bg-white/30 transition-colors"><Newspaper size={28}/></div>
-                    <div className="flex-1"><p className="font-black text-base uppercase tracking-[0.1em]">আমার সংবাদ</p><p className="text-[11px] font-bold opacity-70 mt-1">পাঠানো সংবাদের স্ট্যাটাস</p></div>
+                    <div className="flex-1"><p className="font-black text-base uppercase tracking-[0.1em]">আমার পোস্ট</p><p className="text-[11px] font-bold opacity-70 mt-1">নিজের করা সকল পোস্টের তালিকা</p></div>
                     <ChevronRight className="opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" size={24} />
                 </button>
             </div>
@@ -489,7 +516,7 @@ const UserAuth: React.FC<UserAuthProps> = ({ onLogin }) => {
 
       {isEditingProfile && (
         <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center">
-            <div className="bg-white w-full max-w-sm rounded-[45px] p-8 shadow-2xl space-y-6 animate-in zoom-in duration-300 text-left">
+            <div className="bg-white w-full max-sm rounded-[45px] p-8 shadow-2xl space-y-6 animate-in zoom-in duration-300 text-left">
                 <div className="flex justify-between items-center border-b pb-4">
                     <h3 className="font-black text-xl text-slate-800">তথ্য পরিবর্তন করুন</h3>
                     <button onClick={()=>setIsEditingProfile(false)} className="p-2 text-slate-400 hover:text-red-500"><X size={24}/></button>

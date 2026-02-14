@@ -1,9 +1,29 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, ChevronRight } from 'lucide-react';
 import { CATEGORIES, ICON_MAP } from '../constants';
 import { Notice, User } from '../types';
+
+// Firebase Imports
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
+  authDomain: 'koyra-paikgacha.firebaseapp.com',
+  databaseURL: 'https://koyra-paikgacha-default-rtdb.firebaseio.com',
+  projectId: 'koyra-paikgacha',
+  storageBucket: 'koyra-paikgacha.firebasestorage.app',
+  messagingSenderId: '637481870946',
+  appId: '1:637481870946:web:ef71c1e96b2729b2eb133b'
+};
+
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getDatabase(app);
+
+const toBn = (num: string | number) => 
+  (num || '০').toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
 
 interface HomeProps {
   notices: Notice[];
@@ -14,6 +34,29 @@ interface HomeProps {
 export function Home({ notices, isAdmin, user }: HomeProps) {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(0);
+  const [chatNotifications, setChatNotifications] = useState(0);
+
+  // Listen for chat notifications if user is logged in
+  useEffect(() => {
+    if (!user) {
+      setChatNotifications(0);
+      return;
+    }
+
+    const roomsRef = ref(db, `user_chats/${user.memberId}`);
+    const unsubscribe = onValue(roomsRef, (snap) => {
+      const val = snap.val();
+      if (val) {
+        // Count unique rooms that have unseenCount > 0
+        const count = Object.values(val).filter((room: any) => room.unseenCount > 0).length;
+        setChatNotifications(count);
+      } else {
+        setChatNotifications(0);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   // Filter out User Login (ID 12) from the main grid
   const menuItems = CATEGORIES.filter(c => c.id !== '12');
@@ -85,6 +128,10 @@ export function Home({ notices, isAdmin, user }: HomeProps) {
                 const iconColor = category.color;
                 if (!IconComponent) return null;
 
+                // Special handling for Profile Picture
+                const isProfileMenu = category.id === '18';
+                const hasProfilePic = isProfileMenu && user && (user as any).photoURL;
+
                 return (
                   <button
                     key={category.id}
@@ -109,17 +156,33 @@ export function Home({ notices, isAdmin, user }: HomeProps) {
                     }}
                     className="flex flex-col items-center justify-center gap-2 p-2 premium-card rounded-[28px] group w-full aspect-square shadow-md border border-slate-50 relative overflow-hidden"
                   >
-                    <div 
-                      className="w-14 h-14 rounded-[20px] flex items-center justify-center transition-all duration-300 group-hover:scale-110 shrink-0"
-                      style={{ 
-                        backgroundColor: `${iconColor}12`,
-                        color: iconColor,
-                        boxShadow: `0 6px 14px -3px ${iconColor}24`,
-                        border: `1px solid ${iconColor}18`
-                      }}
-                    >
-                      <IconComponent size={34} className="icon-floating" />
+                    <div className="relative">
+                      {hasProfilePic ? (
+                        <div className="w-14 h-14 rounded-[20px] overflow-hidden border-2 border-white shadow-md shrink-0">
+                           <img src={(user as any).photoURL} className="w-full h-full object-cover" alt="Profile" />
+                        </div>
+                      ) : (
+                        <div 
+                          className="w-14 h-14 rounded-[20px] flex items-center justify-center transition-all duration-300 group-hover:scale-110 shrink-0"
+                          style={{ 
+                            backgroundColor: `${iconColor}12`,
+                            color: iconColor,
+                            boxShadow: `0 6px 14px -3px ${iconColor}24`,
+                            border: `1px solid ${iconColor}18`
+                          }}
+                        >
+                          <IconComponent size={34} className="icon-floating" />
+                        </div>
+                      )}
+
+                      {/* Chat Notification Badge */}
+                      {category.id === '16' && chatNotifications > 0 && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-bounce">
+                          {toBn(chatNotifications)}
+                        </div>
+                      )}
                     </div>
+
                     <span className="text-[11px] font-black text-center leading-tight text-slate-800 line-clamp-1 px-0.5 uppercase tracking-tighter">
                       {category.name}
                     </span>
@@ -130,7 +193,7 @@ export function Home({ notices, isAdmin, user }: HomeProps) {
           ))}
         </div>
 
-        {/* Pagination Indicators - Positioned right above the bottom nav area */}
+        {/* Pagination Indicators */}
         {pages.length > 1 && (
           <div className="shrink-0 flex justify-center items-center gap-2 pt-2 pb-12">
             {pages.map((_, i) => (
