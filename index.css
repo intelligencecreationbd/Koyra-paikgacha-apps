@@ -1,0 +1,29 @@
+
+/* Global Styles for Koyra-Paikgacha App */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --app-height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Ensure smooth scrolling for lists */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
