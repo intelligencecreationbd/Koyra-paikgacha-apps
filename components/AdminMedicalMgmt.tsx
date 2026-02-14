@@ -5,6 +5,7 @@ import {
   Trash2, 
   Plus, 
   X, 
+  Search, 
   Smartphone, 
   MapPin, 
   User as UserIcon, 
@@ -19,6 +20,7 @@ import {
   Camera, 
   Loader2,
   ArrowRight,
+  // Added missing Edit2 import
   Edit2
 } from 'lucide-react';
 
@@ -39,6 +41,9 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(app);
 
+const toBn = (num: string | number) => 
+  (num || '').toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+
 const MEDICAL_CATEGORIES = [
   { id: 'doc', name: 'ডাক্তার খুঁজুন', icon: Stethoscope, color: '#E91E63' },
   { id: 'hosp', name: 'হাসপাতাল ও ক্লিনিক', icon: Hospital, color: '#3B82F6' },
@@ -48,6 +53,15 @@ const MEDICAL_CATEGORIES = [
   { id: 'diag', name: 'ডায়াগনস্টিক সেন্টার', icon: Microscope, color: '#8B5CF6' },
   { id: 'tips', name: 'হেলথ টিপস', icon: Activity, color: '#EC4899' },
 ];
+
+const Header = ({ title, onBack }: { title: string; onBack: () => void }) => (
+  <div className="flex items-center gap-4 mb-6 text-left">
+    <button onClick={onBack} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all">
+      <ChevronLeft size={20} className="text-slate-800" />
+    </button>
+    <h2 className="text-2xl font-black text-slate-800 tracking-tight">{title}</h2>
+  </div>
+);
 
 const EditField = ({ label, value, placeholder, onChange, icon, type = 'text' }: any) => (
   <div className="text-left w-full">
@@ -123,27 +137,26 @@ export default function AdminMedicalMgmt({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500 pb-20">
-        <div className="flex items-center gap-4 mb-6 text-left">
-          <button onClick={handleBack} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all">
-            <ChevronLeft size={20} className="text-slate-800" />
-          </button>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">
-            {selectedCat ? MEDICAL_CATEGORIES.find(c => c.id === selectedCat)?.name : 'চিকিৎসা সেবা ম্যানেজার'}
-          </h2>
-        </div>
+        <Header 
+          title={selectedCat ? MEDICAL_CATEGORIES.find(c => c.id === selectedCat)?.name || 'ম্যানেজমেন্ট' : 'চিকিৎসা সেবা ম্যানেজমেন্ট'} 
+          onBack={handleBack} 
+        />
 
         {!selectedCat ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3">
              {MEDICAL_CATEGORIES.map(cat => (
                 <button
                    key={cat.id}
                    onClick={() => setSelectedCat(cat.id)}
-                   className="flex flex-col items-center justify-center p-6 bg-white rounded-[32px] border border-slate-100 shadow-sm active:scale-[0.98] transition-all group"
+                   className="flex items-center justify-between p-5 bg-white rounded-[28px] border border-slate-100 shadow-sm active:scale-[0.98] transition-all group"
                 >
-                   <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform" style={{ backgroundColor: `${cat.color}15`, color: cat.color }}>
-                      <cat.icon size={28} />
+                   <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-2xl" style={{ backgroundColor: `${cat.color}15`, color: cat.color }}>
+                         <cat.icon size={26} />
+                      </div>
+                      <span className="font-black text-lg text-slate-800">{cat.name}</span>
                    </div>
-                   <span className="font-black text-xs text-slate-800 text-center">{cat.name}</span>
+                   <ArrowRight size={20} className="text-slate-300 group-hover:text-blue-500" />
                 </button>
              ))}
           </div>
@@ -173,6 +186,7 @@ export default function AdminMedicalMgmt({ onBack }: { onBack: () => void }) {
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => { setEditingId(item.id); setForm(item); setShowForm(true); }} className="p-3 bg-blue-50 text-blue-600 rounded-xl active:scale-90 transition-all">
+                                    {/* Changed Edit to Edit2 to fix missing name error */}
                                     <Edit2 size={16}/>
                                 </button>
                                 <button onClick={() => handleDelete(item.id)} className="p-3 bg-red-50 text-red-500 rounded-xl active:scale-90 transition-all">
@@ -206,19 +220,25 @@ export default function AdminMedicalMgmt({ onBack }: { onBack: () => void }) {
                     </div>
 
                     <div className="space-y-4 pt-2">
-                        <EditField label="নাম *" value={form.name} onChange={(v:any)=>setForm({...form, name:v})} placeholder="নাম লিখুন" icon={<UserIcon size={18}/>} />
+                        <EditField label="নাম *" value={form.name} onChange={(v:any)=>setForm({...form, name:v})} placeholder="যেমন: ডাঃ আব্দুর রহমান / ল্যাব এইড" icon={<UserIcon size={18}/>} />
+                        
                         {(selectedCat === 'doc' || selectedCat === 'tips') && (
-                           <EditField label="স্পেশালিস্ট" value={form.specialist} onChange={(v:any)=>setForm({...form, specialist:v})} placeholder="যেমন: মেডিসিন বিশেষজ্ঞ" icon={<Stethoscope size={18}/>} />
+                           <EditField label="স্পেশালিস্ট / টাইটেল" value={form.specialist} onChange={(v:any)=>setForm({...form, specialist:v})} placeholder="যেমন: মেডিসিন বিশেষজ্ঞ" icon={<Stethoscope size={18}/>} />
                         )}
+                        
                         {selectedCat === 'doc' && (
-                           <EditField label="ডিগ্রি" value={form.degree} onChange={(v:any)=>setForm({...form, degree:v})} placeholder="যেমন: MBBS, FCPS" icon={<Tag size={18}/>} />
+                           <EditField label="ডিগ্রি (ডাক্তারদের জন্য)" value={form.degree} onChange={(v:any)=>setForm({...form, degree:v})} placeholder="যেমন: MBBS, FCPS" icon={<Tag size={18}/>} />
                         )}
+
                         <EditField label="মোবাইল নম্বর *" value={form.mobile} onChange={(v:any)=>setForm({...form, mobile:v})} placeholder="০১xxxxxxxxx" icon={<Smartphone size={18}/>} />
-                        <EditField label="ঠিকানা / অবস্থান" value={form.location} onChange={(v:any)=>setForm({...form, location:v})} placeholder="ঠিকানা দিন" icon={<MapPin size={18}/>} />
+                        
+                        <EditField label="ঠিকানা / অবস্থান" value={form.location} onChange={(v:any)=>setForm({...form, location:v})} placeholder="গ্রাম, ইউনিয়ন বা বাজার" icon={<MapPin size={18}/>} />
+                        
                         <div className="text-left">
-                            <label className="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider pl-1">অতিরিক্ত বিবরণ</label>
-                            <textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 outline-none h-24 text-sm" value={form.desc} onChange={e => setForm({...form, desc: e.target.value})} placeholder="বিস্তারিত তথ্য..." />
+                            <label className="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider pl-1">অতিরিক্ত বিবরণ (যদি থাকে)</label>
+                            <textarea className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-700 outline-none h-24 text-sm" value={form.desc} onChange={e => setForm({...form, desc: e.target.value})} placeholder="টিপস বা বিস্তারিত তথ্য..." />
                         </div>
+
                         <button 
                             onClick={handleSubmit} 
                             disabled={isSubmitting} 

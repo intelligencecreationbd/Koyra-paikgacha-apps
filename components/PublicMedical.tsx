@@ -37,6 +37,9 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(app);
 
+const toBn = (num: string | number) => 
+  (num || '').toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[parseInt(d)]);
+
 const convertBnToEn = (str: string) => {
   const bn = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'], en = ['0','1','2','3','4','5','6','7','8','9'];
   return (str || '').toString().split('').map(c => bn.indexOf(c) !== -1 ? en[bn.indexOf(c)] : c).join('');
@@ -118,23 +121,25 @@ export default function PublicMedical({ onBack }: { onBack: () => void }) {
 
       {!selectedCategory ? (
         <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-          {/* Categories Grid Layout */}
-          <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-bottom-4 duration-500">
+          <div className="grid grid-cols-1 gap-3 animate-in slide-in-from-bottom-4 duration-500">
             {MEDICAL_SUBMENUS.map((menu) => {
               const Icon = menu.icon;
               return (
                 <button 
                   key={menu.id}
                   onClick={() => setSelectedCategory(menu.id)}
-                  className="flex flex-col items-center justify-center p-6 bg-white rounded-[35px] border border-slate-100 shadow-sm active:scale-[0.98] transition-all group relative overflow-hidden"
+                  className="flex items-center justify-between p-5 bg-white rounded-[28px] border border-slate-100 shadow-sm active:scale-[0.98] transition-all group overflow-hidden relative"
                 >
-                  <div 
-                    className="w-16 h-16 rounded-[24px] flex items-center justify-center mb-3 shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300"
-                    style={{ backgroundColor: `${menu.color}15`, color: menu.color }}
-                  >
-                    <Icon size={32} strokeWidth={2.5} />
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div 
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-300"
+                      style={{ backgroundColor: `${menu.color}15`, color: menu.color }}
+                    >
+                      <Icon size={26} strokeWidth={2.5} />
+                    </div>
+                    <span className="font-black text-lg text-slate-800">{menu.name}</span>
                   </div>
-                  <span className="font-black text-sm text-slate-800 text-center leading-tight">{menu.name}</span>
+                  <ArrowRight size={20} className="text-slate-200 group-hover:text-blue-500 transition-colors z-10" />
                 </button>
               );
             })}
@@ -169,6 +174,7 @@ export default function PublicMedical({ onBack }: { onBack: () => void }) {
                     return (
                         <div key={item.id} className="bg-white p-5 rounded-[35px] border border-slate-100 shadow-lg shadow-slate-100/50 space-y-4 text-left animate-in slide-in-from-bottom-2 duration-500" style={{ animationDelay: `${idx * 50}ms` }}>
                             
+                            {/* Profile Header Row - Matches Screenshot 2 Top */}
                             <div className="flex items-start gap-4">
                                 <div className="w-16 h-16 rounded-[22px] bg-rose-50 text-[#E91E63] border border-rose-100 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
                                     {item.photo ? (
@@ -188,6 +194,7 @@ export default function PublicMedical({ onBack }: { onBack: () => void }) {
                                 </div>
                             </div>
 
+                            {/* Location Row - Matches Screenshot 2 Middle */}
                             {item.location && (
                                 <div className="flex items-center gap-2 px-1 border-t border-slate-50 pt-3">
                                     <MapPin size={14} className="shrink-0 text-[#E91E63]" />
@@ -195,15 +202,17 @@ export default function PublicMedical({ onBack }: { onBack: () => void }) {
                                 </div>
                             )}
 
+                            {/* Action Button - Matches Screenshot 2 Bottom */}
                             <div className="pt-1">
                                 <a 
                                     href={`tel:${convertBnToEn(item.mobile)}`} 
-                                    className="w-full py-4.5 bg-[#E91E63] text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-rose-500/30 active:scale-95 transition-all text-sm h-14"
+                                    className="w-full py-4 bg-[#E91E63] text-white font-black rounded-[20px] flex items-center justify-center gap-3 shadow-xl shadow-rose-500/30 active:scale-95 transition-all text-[15px]"
                                 >
                                     <PhoneCall size={18} /> সিরিয়ালের জন্য কল দিন
                                 </a>
                             </div>
 
+                            {/* Description text - subtle if exists */}
                             {item.desc && (
                               <p className="text-[11px] font-bold text-slate-400/80 px-1 line-clamp-2 leading-relaxed italic">
                                 {item.desc}
