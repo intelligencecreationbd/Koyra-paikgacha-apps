@@ -14,7 +14,8 @@ import {
   UserCheck,
   Scale,
   Home,
-  Info
+  Info,
+  ChevronRight
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { LegalServiceContact } from '../types';
@@ -119,7 +120,6 @@ const PublicLegal: React.FC<{
 
     selectedProfile.customFields.forEach(field => {
       const label = (field.label || '').toLowerCase();
-      // CRITICAL: Check assistant FIRST so that "Assistant Mobile" stays in assistant group
       if (label.includes('assistant') || label.includes('সহকারী')) {
         assistant.push(field);
       } 
@@ -170,13 +170,10 @@ const PublicLegal: React.FC<{
             </div>
             
             <div className="w-full space-y-3">
-              {/* Addresses */}
               {selectedProfile.officeAddress && <DetailCard icon={<Building2 size={16} />} label="অফিসের ঠিকানা" value={selectedProfile.officeAddress} colorClass="bg-blue-50/10" />}
               {selectedProfile.homeAddress && <DetailCard icon={<Home size={16} />} label="বাসার ঠিকানা" value={selectedProfile.homeAddress} colorClass="bg-slate-50" />}
               
-              {/* Mobile Group - Sequential */}
               <div className="space-y-3 pt-1">
-                {/* Primary Mobile */}
                 <DetailCard 
                   icon={<Smartphone size={16} />} 
                   label="মোবাইল নম্বর" 
@@ -189,7 +186,6 @@ const PublicLegal: React.FC<{
                   } 
                 />
 
-                {/* Extra Mobiles (Mobile 2, Mobile 3 etc.) */}
                 {categorizedFields.mobiles.map((field, idx) => (
                   <DetailCard 
                     key={`mob-${idx}`} 
@@ -206,7 +202,6 @@ const PublicLegal: React.FC<{
                 ))}
               </div>
 
-              {/* Email Fields */}
               {categorizedFields.emails.map((field, idx) => (
                 <DetailCard 
                   key={`email-${idx}`} 
@@ -217,12 +212,10 @@ const PublicLegal: React.FC<{
                 />
               ))}
 
-              {/* Other Fields (General info before Assistant) */}
               {categorizedFields.others.map((field, idx) => (
                 <DetailCard key={`other-${idx}`} icon={<Info size={16} />} label={field.label} value={field.value} />
               ))}
 
-              {/* Assistant Fields - PLACED AT THE VERY END AS REQUESTED */}
               {categorizedFields.assistant.length > 0 && (
                 <div className="pt-2 space-y-3">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] pl-2 text-left">সহকারীর তথ্য</p>
@@ -266,19 +259,16 @@ const PublicLegal: React.FC<{
             {filteredContacts.map((item, idx) => {
               const color = THEME_COLORS[idx % THEME_COLORS.length];
               return (
-                <div key={item.id} className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm flex items-center justify-between">
-                  <div onClick={() => onNavigate(`${location.pathname}?item=${item.id}`)} className="flex-1 text-left flex items-center gap-4 overflow-hidden active:scale-[0.98] transition-all">
-                    <div className="w-14 h-14 rounded-[20px] flex items-center justify-center shrink-0 border" style={{ backgroundColor: `${color}10`, color: color, border: `1px solid ${color}15` }}>
+                <div key={item.id} className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm">
+                  <div onClick={() => onNavigate(`${location.pathname}?item=${item.id}`)} className="w-full text-left flex items-center gap-4 overflow-hidden active:scale-[0.98] transition-all">
+                    <div className="w-14 h-14 rounded-[20px] flex items-center justify-center shrink-0 border shadow-sm" style={{ backgroundColor: `${color}10`, color: color, border: `1px solid ${color}15` }}>
                       {item.photo ? <img src={item.photo} className="w-full h-full object-cover rounded-[19px]" /> : <Users size={24} />}
                     </div>
-                    <div className="overflow-hidden">
+                    <div className="flex-1 overflow-hidden">
                       <p className="text-base font-black text-slate-800 leading-tight truncate">{item.name}</p>
                       <p className="text-[10px] font-bold text-slate-400 truncate uppercase mt-1">{item.officeAddress || 'ঠিকানা পাওয়া যায়নি'}</p>
                     </div>
-                  </div>
-                  <div className="flex gap-2 shrink-0 ml-3">
-                    <a href={`tel:${convertBnToEn(item.mobile)}`} className="p-3 bg-blue-600 text-white rounded-xl active:scale-90 transition-all"><PhoneCall size={18} /></a>
-                    <a href={`https://wa.me/${formatWhatsAppNumber(item.mobile)}`} target="_blank" rel="noopener noreferrer" className="p-3 bg-[#25D366] text-white rounded-xl active:scale-90 transition-all"><WhatsAppIcon size={18} /></a>
+                    <ChevronRight size={18} className="text-slate-300 shrink-0" />
                   </div>
                 </div>
               );

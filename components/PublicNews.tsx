@@ -275,7 +275,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
   const handleSubmissionClick = () => {
     const savedUser = localStorage.getItem('kp_logged_in_user');
     if (!savedUser) {
-        alert('সংবাদ পাঠাতে দয়া করে লগইন করুন বা নিবন্ধন করুন।');
+        alert('পোস্ট পাঠাতে দয়া করে লগইন করুন বা নিবন্ধন করুন।');
         navigate('/auth?to=news');
     } else {
         const u = JSON.parse(savedUser);
@@ -343,13 +343,13 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
   if (showSubmitForm) {
     return (
         <div className="bg-white min-h-full animate-in slide-in-from-right-4 duration-500 p-5 pb-32 overflow-y-auto no-scrollbar">
-             <div className="flex items-center gap-4 mb-6">
-                <button onClick={() => setShowSubmitForm(false)} className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all shrink-0">
+             <div className="relative flex items-center justify-center mb-6 min-h-[50px]">
+                <button onClick={() => setShowSubmitForm(false)} className="absolute left-0 p-3 bg-white rounded-xl shadow-sm border border-slate-100 active:scale-90 transition-all shrink-0">
                   <ChevronLeft size={20} className="text-slate-800" />
                 </button>
-                <div className="text-left overflow-hidden">
-                    <h2 className="text-xl font-black text-slate-800 tracking-tight leading-none truncate">সংবাদ পাঠান</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-widest truncate">আপনার চারপাশের খবর দিন</p>
+                <div className="text-center overflow-hidden">
+                    <h2 className="text-xl font-black text-slate-800 tracking-tight leading-none truncate">নতুন পোস্ট করুন</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-widest truncate">আপনার চারপাশের পোস্ট দিন</p>
                 </div>
             </div>
             <div className="bg-white p-6 rounded-[40px] border border-slate-100 shadow-xl space-y-6">
@@ -377,16 +377,16 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                             <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={20} />
                         </div>
                     </div>
-                    <EditField label="শিরোনাম *" value={form.title} onChange={(v:any)=>setForm({...form, title:v})} placeholder="সংবাদের টাইটেল লিখুন" icon={<Newspaper size={18}/>} />
+                    <EditField label="শিরোনাম *" value={form.title} onChange={(v:any)=>setForm({...form, title:v})} placeholder="পোস্টের টাইটেল লিখুন" icon={<Newspaper size={18}/>} />
                     <EditField label="রিপোর্টার *" value={form.reporter} readOnly={true} icon={<User size={18}/>} />
                     <EditField label="তারিখ ও সময়" value={form.date} readOnly={true} icon={<Clock size={18}/>} />
                     <div className="text-left">
                         <label className="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider pl-1">বিস্তারিত বিবরণ *</label>
                         <textarea className="w-full p-5 bg-slate-50 border border-slate-100 rounded-[30px] font-bold outline-none text-slate-800 h-44 text-sm focus:ring-2 focus:ring-blue-500 transition-all" value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="ঘটনার বিস্তারিত এখানে লিখুন..." />
                     </div>
-                    <EditField label="সংবাদের উৎস (ঐচ্ছিক)" value={form.source} onChange={(v:any)=>setForm({...form, source:v})} placeholder="উদাঃ প্রত্যক্ষদর্শী বা ওয়েবসাইট" icon={<LinkIcon size={18}/>} />
+                    <EditField label="পোস্টের উৎস (ঐচ্ছিক)" value={form.source} onChange={(v:any)=>setForm({...form, source:v})} placeholder="উদাঃ প্রত্যক্ষদর্শী বা ওয়েবসাইট" icon={<LinkIcon size={18}/>} />
                     <button onClick={handleUserSubmit} disabled={isSubmitting} className="w-full py-5 bg-[#4CAF50] text-white font-black rounded-[30px] shadow-lg mt-4 flex items-center justify-center gap-2 active:scale-95 border-b-4 border-green-700 disabled:opacity-50">
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send size={18}/> সংবাদ জমা দিন</>}
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : <><Send size={18}/> পোস্ট জমা দিন</>}
                     </button>
                 </div>
             </div>
@@ -418,7 +418,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
           <div className="space-y-4">
              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-md shrink-0">নিউজ</span>
+                    <span className="px-3 py-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-md shrink-0">পোস্ট</span>
                     <span className="text-[11px] font-bold text-slate-400 truncate">• {toBn(selectedNews.date || 'আজ')}</span>
                 </div>
                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest truncate">{categories.find(c=>c.id===selectedNews.category)?.name || 'সাধারণ'}</span>
@@ -442,7 +442,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                         {reporterData.isVerified && reporterData.village && (
                             <p className="text-[10px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md truncate uppercase tracking-tighter shrink-0">{reporterData.village}</p>
                         )}
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">রিপোর্টার</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">পোস্ট করেছেন</p>
                       </div>
                    </div>
                 </div>
@@ -516,12 +516,8 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
               </div>
           </div>
           {selectedNews.source && (
-             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">সংবাদের উৎস</p><p className="text-xs font-bold text-slate-600 italic mt-1">{selectedNews.source}</p></div>
+             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left"><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">পোস্টের উৎস</p><p className="text-xs font-bold text-slate-600 italic mt-1">{selectedNews.source}</p></div>
           )}
-          <div className="bg-emerald-50 rounded-[30px] p-6 flex flex-col items-center gap-4 border border-emerald-100">
-             <p className="text-xs font-black text-emerald-700 uppercase tracking-widest">খবরটি আপনার বন্ধুকে পাঠান</p>
-             <button onClick={() => handleShare(selectedNews)} className="w-full py-4 bg-[#25D366] text-white font-black rounded-2xl shadow-lg flex items-center justify-center gap-3 active:scale-95 transition-all"><MessageCircle size={22} /> WhatsApp এ শেয়ার করুন</button>
-          </div>
           <div className="pt-10 space-y-6">
              <div className="flex items-center gap-3"><div className="w-1.5 h-6 bg-blue-600 rounded-full"></div><h4 className="text-lg font-black text-slate-800">আরও পড়ুন</h4></div>
              <div className="grid gap-4">
@@ -533,7 +529,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                 ))}
              </div>
           </div>
-          <button onClick={() => setSelectedNews(null)} className="w-full py-5 bg-slate-900 text-white font-black rounded-3xl active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl"><Layout size={20} /> সংবাদ তালিকায় ফিরুন</button>
+          <button onClick={() => setSelectedNews(null)} className="w-full py-5 bg-slate-900 text-white font-black rounded-3xl active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl"><Layout size={20} /> পোস্ট তালিকায় ফিরুন</button>
         </article>
       </div>
     );
@@ -545,8 +541,8 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
           <div className="fixed inset-0 z-[180] bg-slate-900/60 backdrop-blur-md p-5 flex items-center justify-center">
               <div className="bg-white w-full max-w-xs rounded-[45px] p-8 shadow-2xl text-center space-y-5 animate-in zoom-in duration-300">
                   <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600 mx-auto shadow-sm"><CheckCircle2 size={50} /></div>
-                  <h3 className="font-black text-lg text-slate-800 leading-tight">সংবাদ পাঠানোর জন্য আপনাকে ধন্যবাদ</h3>
-                  <p className="text-sm font-bold text-slate-500">যাচাই করা শেষে আপনার সংবাদটি প্রকাশ করা হবে।</p>
+                  <h3 className="font-black text-lg text-slate-800 leading-tight">পোস্ট করার জন্য আপনাকে ধন্যবাদ</h3>
+                  <p className="text-sm font-bold text-slate-500">যাচাই করা শেষে আপনার পোস্টটি প্রকাশ করা হবে।</p>
                   <button onClick={() => { setShowSuccessMessage(false); setActiveCategory('all'); }} className="p-3 bg-red-50 text-red-600 rounded-full shadow-inner active:scale-90 transition-all mx-auto block border border-red-100"><X size={24} /></button>
               </div>
           </div>
@@ -570,7 +566,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
         </header>
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-           <button onClick={() => setActiveCategory('all')} className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-xs transition-all border shrink-0 ${activeCategory === 'all' ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100'}`}>সব সংবাদ</button>
+           <button onClick={() => setActiveCategory('all')} className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-xs transition-all border shrink-0 ${activeCategory === 'all' ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100'}`}>সব পোস্ট</button>
            {categories.map(cat => (
              <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`whitespace-nowrap px-6 py-3 rounded-2xl font-black text-xs transition-all border shrink-0 ${activeCategory === cat.id ? 'bg-[#0056b3] text-white border-[#0056b3] shadow-lg shadow-blue-500/20' : 'bg-white text-slate-400 border-slate-100'}`}>{cat.name}</button>
            ))}
@@ -578,9 +574,9 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
       </div>
 
       {loading ? (
-        <div className="py-24 flex flex-col items-center justify-center gap-4 opacity-30"><div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div><p className="font-black text-[10px] uppercase tracking-widest">সংবাদ লোড হচ্ছে...</p></div>
+        <div className="py-24 flex flex-col items-center justify-center gap-4 opacity-30"><div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div><p className="font-black text-[10px] uppercase tracking-widest">পোস্ট লোড হচ্ছে...</p></div>
       ) : filteredNews.length === 0 ? (
-        <div className="py-32 text-center opacity-30 flex flex-col items-center gap-5"><div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 border border-slate-100"><Newspaper size={48} /></div><p className="font-black text-slate-600">কোনো সংবাদ পাওয়া যায়নি</p></div>
+        <div className="py-32 text-center opacity-30 flex flex-col items-center gap-5"><div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 border border-slate-100"><Newspaper size={48} /></div><p className="font-black text-slate-600">কোনো পোস্ট পাওয়া যায়নি</p></div>
       ) : (
         <div className="pt-6 px-5 space-y-10">
           {featuredNews && activeCategory === 'all' && (
@@ -588,7 +584,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                <div className="flex items-center justify-between mb-4 overflow-hidden gap-2">
                   <div className="flex items-center gap-2 shrink-0">
                     <TrendingUp size={16} className="text-red-600" />
-                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">আপডেট সংবাদ</span>
+                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">আপডেট পোস্ট</span>
                   </div>
                   
                   <button 
@@ -596,7 +592,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                     className="px-4 py-2 animate-ghost-pulse text-white rounded-xl font-black text-[10px] uppercase tracking-wide shadow-lg active:scale-95 transition-all flex items-center gap-2 shrink-0 border-b-2 border-green-800/20"
                     style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
                   >
-                    <Plus size={12} strokeWidth={4} /> সংবাদ পাঠান
+                    পোস্ট করুন
                   </button>
                </div>
 
@@ -607,7 +603,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
                     ) : (
                        <div className="w-full h-full flex items-center justify-center text-slate-300"><Newspaper size={48}/></div>
                     )}
-                    <div className="absolute top-4 left-4 flex gap-2"><span className="px-3 py-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg">আজকের খবর</span></div>
+                    <div className="absolute top-4 left-4 flex gap-2"><span className="px-3 py-1 bg-red-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg">আজকের পোস্ট</span></div>
                     <div className="absolute bottom-4 left-4"><span className="px-3 py-1 bg-blue-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest rounded-lg shadow-lg truncate max-w-[120px]">{categories.find(c=>c.id===featuredNews.category)?.name || 'সাধারণ'}</span></div>
                  </div>
                  <h3 className="text-2xl font-black text-slate-900 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">{featuredNews.title}</h3>
@@ -645,7 +641,7 @@ export default function PublicNews({ onBack }: { onBack: () => void }) {
             </div>
           )}
           <div className="space-y-8 pb-10">
-            <div className="flex items-center justify-between"><div className="flex items-center gap-3 shrink-0"><Bookmark size={18} className="text-blue-600" /><h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">অন্যান্য সংবাদ</h4></div><div className="h-px bg-slate-100 flex-1 ml-4"></div></div>
+            <div className="flex items-center justify-between"><div className="flex items-center gap-3 shrink-0"><Bookmark size={18} className="text-blue-600" /><h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">অন্যান্য পোস্ট</h4></div><div className="h-px bg-slate-100 flex-1 ml-4"></div></div>
             <div className="space-y-10">
               {regularNews.map((news, idx) => {
                 const rep = getReporterData(news);

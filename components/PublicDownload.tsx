@@ -66,8 +66,8 @@ const PublicDownload: React.FC<PublicDownloadProps> = ({ appLogo, isAdminLoggedI
           <ChevronLeft size={20} className="text-slate-800" />
         </button>
         <div className="flex flex-col items-center text-center">
-          <h2 className="text-lg font-black text-slate-800 tracking-tight leading-tight">কয়রা-পাইকগাছা কমিউনিটি এপস</h2>
-          <p className="text-[10px] font-black uppercase tracking-widest animate-rainbow-text mt-1">বিপদে আপনার বন্ধু</p>
+          <h2 className="text-xl font-black text-slate-800 tracking-tight leading-none">কয়রা-পাইকগাছা</h2>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">কমিউনিটি এপস</p>
         </div>
       </header>
 
@@ -153,11 +153,11 @@ const PublicDownload: React.FC<PublicDownloadProps> = ({ appLogo, isAdminLoggedI
               icon={<CloudSun size={22} />} 
               title="আবহাওয়ার সংবাদ" 
               titleColor="text-cyan-600"
-              text="কয়রা-পাইকগাছা উপকূলীয় উপজেলা এখানে প্রাকৃতিক দুর্যোগ প্রচুর আঘাত হানে, এজন্য 'আবহাওয়া' ফিচার টি দারুণ উপকারে আসবে" 
+              text="কয়রা-পাইকগাছা উপকূলীয় উপজেলা এখানে প্রাকৃতিক দুর্যোগ প্রচুর আঘাত হানে, এজন্য 'আবহাওয়া' ফিচার টি দারুণ উপকারে আসবে" 
             />
             <DownloadFeatureCard 
               icon={<Newspaper size={22} />} 
-              title="স্থানীয় সংবাদ" 
+              title="স্থানীয় সংবাদ" 
               titleColor="text-green-600"
               text="যদি কারর কোনো কিছু হারিয়ে যায় কিংবা কেউ কোনোকিছু পেয়েছে ফেরত দিতে চাই, তাছাড়া গুরুত্বপূর্ণ অথেন্টিক সংবাদ প্রকাশ করা হয়। আপনিও চাইলে সংবাদ প্রকাশ করতে পারবেন।" 
             />
@@ -171,7 +171,7 @@ const PublicDownload: React.FC<PublicDownloadProps> = ({ appLogo, isAdminLoggedI
               icon={<Phone size={22} />} 
               title="ডিজিটাল ফোন ডিরেক্টরি" 
               titleColor="text-purple-600"
-              text="যা 'মোবাইল নাম্বার' মেনু নামে শো করছে, এখানে কয়রা এবং পাইকগাছার সকল নির্বাচিত নেতাকর্মী, সকল সরকারি অফিসের মোবাইল নং, ইমেইল ঠিকানা সহ প্রয়োজনীয় সবকিছু এক সাথে।" 
+              text="যা 'মোবাইল নাম্বার' মেনু নামে শো করছে, এখানে কয়রা এবং পাইকগাছার সকল নির্বাচিত নেতাকর্মীরা, সকল সরকারি অফিসের মোবাইল নং, ইমেইল ঠিকানা সহ প্রয়োজনীয় সবকিছু এক সাথে।" 
             />
             <DownloadFeatureCard 
               icon={<Zap size={22} />} 
