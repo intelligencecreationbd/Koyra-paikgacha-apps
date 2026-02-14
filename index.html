@@ -52,7 +52,7 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            position: fixed; /* Prevents accidental elastic scrolling on iOS */
+            position: fixed;
             font-family: 'Hind Siliguri', sans-serif;
             -webkit-tap-highlight-color: transparent;
             background-color: #FFFFFF;
@@ -68,23 +68,18 @@
             overflow-x: hidden;
         }
 
-        /* GLOBAL SCALING LOGIC - CRITICAL FOR MOBILE LAYOUT */
-        /* Extra small devices (phones, 320px and down) */
+        /* GLOBAL RESPONSIVE SCALING LOGIC */
         @media (max-width: 320px) {
             html { font-size: 13px; }
             .premium-card { transform: scale(0.95); }
         }
-        /* Small devices (phones, 360px and down) */
-        @media (max-width: 360px) {
+        @media (min-width: 321px) and (max-width: 360px) {
             html { font-size: 14px; }
-            .premium-card { transform: scale(0.98); }
         }
-        /* Medium devices (phones, 380px and down) */
-        @media (max-width: 380px) {
+        @media (min-width: 361px) and (max-width: 380px) {
             html { font-size: 15px; }
         }
-        /* Large phones (400px and up) */
-        @media (min-width: 400px) {
+        @media (min-width: 381px) {
             html { font-size: 16px; }
         }
 
@@ -152,6 +147,17 @@
             -webkit-background-clip: text;
             background-clip: text;
             animation: shimmer 3s linear infinite;
+        }
+
+        .download-btn-animate {
+            background: linear-gradient(-45deg, #FF0080, #7928CA, #0070F3, #23D5AB, #FF8A00, #00FF75);
+            background-size: 600% 600%;
+            animation: gradient-flow 4s ease infinite;
+        }
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .animate-rainbow-text {
