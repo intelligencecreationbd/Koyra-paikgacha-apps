@@ -152,11 +152,12 @@ const LandingScreen: React.FC<{ isDarkMode: boolean, setIsDarkMode: (v: boolean)
          </div>
 
          <div className="space-y-4 text-center animate-in fade-in zoom-in duration-1000 delay-200">
-            <div className="space-y-2">
-              <h1 className="text-5xl font-black tracking-tight text-[#0056b3] dark:text-blue-500 drop-shadow-sm">
+            <div className="flex flex-col items-center">
+              <h1 className="text-5xl font-black tracking-tight text-[#0056b3] dark:text-blue-500 drop-shadow-sm leading-none">
                 কয়রা-পাইকগাছা
               </h1>
-              <p className="text-slate-500 dark:text-slate-400 font-bold text-lg px-4 leading-snug max-w-[320px] mx-auto">
+              <p className="text-[12px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.4em] mt-0.5">কমিউনিটি এপস</p>
+              <p className="text-slate-500 dark:text-slate-400 font-bold text-lg px-4 leading-snug max-w-[320px] mx-auto mt-4">
                 আপনার এলাকার সকল ডিজিটাল সেবা এখন এক ঠিকানায়
               </p>
             </div>
@@ -318,7 +319,7 @@ const App = () => {
                   <div className="flex items-baseline gap-1.5 overflow-hidden">
                     <h2 className="font-black text-xl text-[#0056b3] dark:text-blue-400 shimmer-text leading-none truncate">কয়রা-পাইকগাছা</h2>
                   </div>
-                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest animate-pulse mt-1">কমিউনিটি এপস</p>
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">কমিউনিটি এপস</p>
                 </div>
                 <button 
                   onPointerDown={handleLongPressStart}
@@ -361,7 +362,6 @@ const App = () => {
                       <MenuLink icon={<UserIcon size={20} />} label="আমার প্রোফাইল" onClick={() => { setIsDrawerOpen(false); navigate('/auth'); }} />
                     )}
                     <MenuLink icon={<PlusCircle size={20} />} label="তথ্য প্রদান" onClick={() => { setIsDrawerOpen(false); navigate('/info-submit'); }} />
-                    <MenuLink icon={<MessageSquare size={20} />} label="Help Chat" onClick={() => { setIsDrawerOpen(false); navigate('/hotline'); }} />
                     {isAdminLoggedIn && (
                        <MenuLink icon={<Lock size={20} />} label="এডমিন প্যানেল" onClick={() => { setIsDrawerOpen(false); navigate('/admin'); }} />
                     )}
@@ -401,13 +401,17 @@ const App = () => {
               <div className="flex flex-col items-center overflow-hidden">
                 <div className="flex items-baseline gap-1.5 overflow-hidden">
                   <h1 className="font-black text-xl tracking-tight text-white leading-none drop-shadow-sm truncate">
-                    {isChatPage ? 'কেপি চ্যাট' : isNewsPage ? 'স্থানীয় সংবাদ' : 'কয়রা-পাইকগাছা'}
+                    {isChatPage ? 'কেপি চ্যাট' : isNewsPage ? 'কেপি পোস্ট' : 'কয়রা-পাইকগাছা'}
                   </h1>
                 </div>
-                <div className="relative h-4 flex items-center justify-center mt-1 overflow-hidden w-full px-2">
-                  <span className="text-[9px] font-black tracking-wider uppercase whitespace-nowrap animate-rainbow-text">
-                    {subtitles[subtitleIndex]}
-                  </span>
+                <div className="relative h-4 flex items-center justify-center mt-0.5 overflow-hidden w-full px-2">
+                  {(!isChatPage && !isNewsPage) ? (
+                    <span className="text-[9px] font-black tracking-wider uppercase text-white/80 whitespace-nowrap">কমিউনিটি এপস</span>
+                  ) : (
+                    <span className="text-[9px] font-black tracking-wider uppercase whitespace-nowrap animate-rainbow-text">
+                      {subtitles[subtitleIndex]}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
@@ -422,7 +426,7 @@ const App = () => {
 
       {showAdminLogin && !isAdminLoggedIn && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 w-full max-w-xs rounded-[28px] p-8 shadow-2xl animate-in zoom-in duration-500 border border-slate-100">
+          <div className="bg-white dark:bg-slate-800 w-full max-xs rounded-[28px] p-8 shadow-2xl animate-in zoom-in duration-500 border border-slate-100">
             <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <Lock className="text-[#0056b3]" size={32} />
             </div>

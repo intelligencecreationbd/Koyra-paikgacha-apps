@@ -32,7 +32,7 @@ import { MainMenu } from './types';
  * Page 1 (12 items):
  * 1. Hotline, 2. Tradition, 3. Weather
  * 4. Bus (formerly Transport), 5. Mobile Number, 6. Digital Ledger
- * 7. Online Haat, 8. Local News, 9. Legal Services
+ * 7. Online Haat, 8. KP Post (formerly Local News), 9. Legal Services
  * 10. KP Chat, 11. Medical Service, 12. My Profile
  * Page 2:
  * 13. Age Calculator, 14. Help Line
@@ -124,7 +124,7 @@ export const CATEGORIES: MainMenu[] = [
   },
   {
     id: '14',
-    name: 'স্থানীয় সংবাদ',
+    name: 'কেপি পোস্ট',
     icon: 'Newspaper',
     color: '#4CAF50',
     subMenus: [
