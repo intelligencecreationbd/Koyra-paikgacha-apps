@@ -3,7 +3,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>Koyra-Paikgacha</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://meet.jit.si/external_api.js"></script>
@@ -52,7 +52,7 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            position: fixed;
+            position: fixed; /* Prevents accidental elastic scrolling on iOS */
             font-family: 'Hind Siliguri', sans-serif;
             -webkit-tap-highlight-color: transparent;
             background-color: #FFFFFF;
@@ -68,22 +68,14 @@
             overflow-x: hidden;
         }
 
-        /* GLOBAL RESPONSIVE SCALING LOGIC - AUTO ZOOM FOR MOBILE */
-        @media (max-width: 320px) {
-            html { font-size: 13.5px; }
-            .premium-card { transform: scale(0.94); }
-        }
-        @media (min-width: 321px) and (max-width: 360px) {
-            html { font-size: 14.5px; }
-        }
-        @media (min-width: 361px) and (max-width: 380px) {
-            html { font-size: 15.5px; }
-        }
-        @media (min-width: 381px) and (max-width: 440px) {
-            html { font-size: 16px; }
-        }
-        @media (min-width: 441px) {
-            html { font-size: 16.5px; }
+        /* Global Content Scaling for small screens */
+        @media (max-width: 360px) {
+            html {
+                font-size: 14px; /* Downscale root font size */
+            }
+            .premium-card {
+                transform: scale(0.98);
+            }
         }
 
         @media (min-width: 450px) {
@@ -127,9 +119,39 @@
             100% { background-position: 0% 50%; }
         }
 
+        .header-curves::before, .header-curves::after {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle at center, rgba(0, 255, 255, 0.1) 0%, transparent 50%);
+            animation: rotateCurves 25s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes rotateCurves {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .glass-header {
             backdrop-filter: blur(16px) saturate(180%);
             -webkit-backdrop-filter: blur(16px) saturate(180%);
+        }
+
+        .metallic-blue {
+            background: linear-gradient(135deg, #0062cc 0%, #007BFF 50%, #0056b3 100%);
+            box-shadow: 0 10px 25px rgba(0, 86, 179, 0.45), 
+                        inset 0 1px 2px rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .premium-card {
@@ -150,6 +172,10 @@
             -webkit-background-clip: text;
             background-clip: text;
             animation: shimmer 3s linear infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
         }
 
         .download-btn-animate {
