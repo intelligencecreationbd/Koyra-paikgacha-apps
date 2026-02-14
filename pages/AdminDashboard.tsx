@@ -13,20 +13,25 @@ import {
   Bus,
   Search,
   Plus,
+  Mail,
   ShieldAlert,
+  Scale,
   Loader2,
+  Camera,
   Smartphone,
   Tag,
   Building2,
+  Home as HomeIcon,
   ShieldCheck,
+  UserCheck,
   FolderPlus,
+  User as UserIcon,
   Phone,
   Newspaper,
   ShoppingBag,
-  HeartPulse,
-  Scale
+  HeartPulse
 } from 'lucide-react';
-import { Submission, Notice } from '../types';
+import { Submission, Notice, User as AppUser, HotlineContact, BusCounter, LegalServiceContact } from '../types';
 import AdminHotlineMgmt from '../components/AdminHotlineMgmt';
 import AdminBusMgmt from '../components/AdminBusMgmt';
 import AdminLegalMgmt from '../components/AdminLegalMgmt';
@@ -34,12 +39,11 @@ import AdminDirectoryMgmt from '../components/AdminDirectoryMgmt';
 import AdminNewsMgmt from '../components/AdminNewsMgmt';
 import AdminHaatMgmt from '../components/AdminHaatMgmt';
 import AdminUserList from '../components/AdminUserList';
-// Fixed Import Path with exact casing for Linux compatibility
 import AdminMedicalMgmt from '../components/AdminMedicalMgmt';
 
 // Firebase Imports
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, onValue, remove, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, onValue, remove, set, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBg-atwF990YQ8PvDCwKPDxu8IZlQgOZr4',
