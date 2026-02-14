@@ -3,7 +3,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no, viewport-fit=cover">
     <title>Koyra-Paikgacha</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://meet.jit.si/external_api.js"></script>
@@ -68,19 +68,22 @@
             overflow-x: hidden;
         }
 
-        /* GLOBAL RESPONSIVE SCALING LOGIC */
+        /* GLOBAL RESPONSIVE SCALING LOGIC - AUTO ZOOM FOR MOBILE */
         @media (max-width: 320px) {
-            html { font-size: 13px; }
-            .premium-card { transform: scale(0.95); }
+            html { font-size: 13.5px; }
+            .premium-card { transform: scale(0.94); }
         }
         @media (min-width: 321px) and (max-width: 360px) {
-            html { font-size: 14px; }
+            html { font-size: 14.5px; }
         }
         @media (min-width: 361px) and (max-width: 380px) {
-            html { font-size: 15px; }
+            html { font-size: 15.5px; }
         }
-        @media (min-width: 381px) {
+        @media (min-width: 381px) and (max-width: 440px) {
             html { font-size: 16px; }
+        }
+        @media (min-width: 441px) {
+            html { font-size: 16.5px; }
         }
 
         @media (min-width: 450px) {
